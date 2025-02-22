@@ -73,3 +73,21 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+
+model Capsule {
+  id               String    @id @default(uuid())
+  creatorId        String
+  contentHash      String
+  caption          String
+  tags             String[]
+  location         String?  
+  finalUnlockTime  DateTime
+  earlyUnlockDates DateTime[]
+  humanLimit       Int
+  openedCount      Int       @default(0)
+  isPublic         Boolean   @default(false)
+  guardianId       String?
+  badgeRequirement Int
+  createdAt        DateTime  @default(now())
+  // Add relations if needed, e.g., creator: User @relation(fields: [creatorId], references: [id])
+}
