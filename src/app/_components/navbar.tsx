@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import useRegisterModal from '~/hooks/use-register-modal';
 
 export default function Navbar() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const pathname = usePathname();
 

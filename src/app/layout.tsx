@@ -3,7 +3,6 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
-import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
 import { Network } from "@aptos-labs/ts-sdk";
 
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
@@ -32,12 +31,14 @@ export default function RootLayout({
       dappConfig={{ network: Network.DEVNET }}
     >
       <html lang="en" className={`${GeistSans.variable}`}>
+        <SessionProvider session={session}>
         <body>
           <TRPCReactProvider><LoginModal />
           <Navbar />
           {children}
           <Toaster /></TRPCReactProvider>
         </body>
+        </SessionProvider>
       </html>
     </AptosWalletAdapterProvider>
   );

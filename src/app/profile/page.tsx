@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { User, Medal, Clock, Settings, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { useSession } from 'next-auth/react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { api } from '~/trpc/react';
 
 interface ProfileFormData {
   displayName: string | null;
@@ -18,18 +18,8 @@ export default function Profile() {
 
   const [name, setName] = useState('');
 
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await axios.get('/api/current-user');
-        setName(response.data.name);        
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
+  // const {data: user, error} = api.user.getCurrentUser.useQuery();
 
-    fetchCurrentUser();
-  }, []);
 
   const userStats = {
     capsules: 24,
