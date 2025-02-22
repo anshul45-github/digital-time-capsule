@@ -3,6 +3,10 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
+import { PetraWallet } from "petra-plugin-wallet-adapter";
+import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
+import { Network } from "@aptos-labs/ts-sdk";
+
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
@@ -11,14 +15,21 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
-      <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
-      </body>
-    </html>
+    <AptosWalletAdapterProvider
+      optInWallets={['Petra']}
+      autoConnect={true}
+      dappConfig={{ network: Network.DEVNET }}
+    >
+      <html lang="en" className={`${GeistSans.variable}`}>
+        <body>
+          <TRPCReactProvider>{children}</TRPCReactProvider>
+        </body>
+      </html>
+    </AptosWalletAdapterProvider>
   );
 }
