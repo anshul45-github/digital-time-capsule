@@ -1,6 +1,7 @@
 import React from 'react';
 import { Github, Mail } from 'lucide-react';
-import { signIn } from "~/auth"
+import { signIn } from "~/auth";
+import { authenticate } from '~/lib/actions';
 
 export const Login = () => {
   return (
@@ -47,7 +48,10 @@ export const Login = () => {
             </div>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" action={async () => {
+                    "use server"
+                    await signIn("credentials")
+                  }}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email address
