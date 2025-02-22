@@ -8,6 +8,7 @@ import Navbar from "./_components/navbar";
 import { Toaster } from "~/components/ui/sonner";
 import { LoginModal } from "./_components/login-modal";
 import { auth } from "~/auth";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -18,8 +19,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const session = await auth();
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
+      <SessionProvider session={session}>
       <body>
         <TRPCReactProvider>
           <LoginModal />
@@ -28,6 +31,7 @@ export default async function RootLayout({
           <Toaster />
         </TRPCReactProvider>
       </body>
+      </SessionProvider>
     </html>
   );
 }

@@ -1,10 +1,13 @@
 "use client";
 import { Sparkles, Search, Info, User, Box, Home, LogIn } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import useRegisterModal from '~/hooks/use-register-modal';
 
 export default function Navbar() {
+  const { data: session, status } = useSession();
+
   const pathname = usePathname();
 
   const registerModal = useRegisterModal();
@@ -64,7 +67,7 @@ export default function Navbar() {
           </div>
 
           {/* Profile Link */}
-          <button
+          {!session && <button
             onClick={registerModal.onOpen}
             className={`px-4 py-2 rounded-lg transition-colors ${isActive('/profile')}`}
           >
@@ -72,7 +75,18 @@ export default function Navbar() {
               <LogIn className="w-4 h-4" />
               Login
             </span>
-          </button>
+          </button>}
+          {session && (
+            <Link
+              href="/profile"
+              className={`px-4 py-2 rounded-lg transition-colors ${isActive('/profile')}`}
+            >
+              <span className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Profile
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </nav>

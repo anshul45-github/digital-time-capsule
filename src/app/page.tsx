@@ -4,6 +4,8 @@ import { Plus } from 'lucide-react';
 import { CreateCapsuleModal } from './_components/create-capsule-modal';
 import { FeaturedCapsules } from './_components/featured-capsules';
 import { Categories } from './_components/categories';
+import { useEffect } from 'react';
+import axios from 'axios';
 
 export default function Home() {
   const [showCreateModal, setShowCreateModal] = useState(false);
