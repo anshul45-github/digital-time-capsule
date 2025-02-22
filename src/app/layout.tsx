@@ -8,6 +8,11 @@ import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
 import { Network } from "@aptos-labs/ts-sdk";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import Navbar from "./_components/navbar";
+import { Toaster } from "~/components/ui/sonner";
+import { LoginModal } from "./_components/login-modal";
+import { auth } from "~/auth";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -19,6 +24,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const session = await auth();
   return (
     <AptosWalletAdapterProvider
       optInWallets={['Petra']}
@@ -27,7 +33,10 @@ export default function RootLayout({
     >
       <html lang="en" className={`${GeistSans.variable}`}>
         <body>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <TRPCReactProvider><LoginModal />
+          <Navbar />
+          {children}
+          <Toaster /></TRPCReactProvider>
         </body>
       </html>
     </AptosWalletAdapterProvider>

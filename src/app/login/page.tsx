@@ -1,11 +1,18 @@
-import { Suspense } from 'react';
-import SignIn from '../_components/sign-in';
-import { Login } from '../_components/login';
+"use client";
+import { useEffect } from 'react';
+import useRegisterModal from '~/hooks/use-register-modal';
  
 export default function LoginPage() {
+  const registerModal = useRegisterModal();
+
+  useEffect(() => {
+    if(registerModal.isOpen === false) {
+      registerModal.onOpen();
+    }
+  }, [registerModal.isOpen]);
+
   return (
     <div>
-        <Login />
     </div>
   );
 }
