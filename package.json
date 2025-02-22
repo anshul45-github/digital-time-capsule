@@ -21,6 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.33.1",
     "@auth/prisma-adapter": "^2.7.2",
     "@prisma/client": "^5.14.0",
     "@t3-oss/env-nextjs": "^0.10.1",
