@@ -3,6 +3,10 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
+import { PetraWallet } from "petra-plugin-wallet-adapter";
+import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
+import { Network } from "@aptos-labs/ts-sdk";
+
 import { TRPCReactProvider } from "~/trpc/react";
 import Navbar from "./_components/navbar";
 import { Toaster } from "~/components/ui/sonner";
@@ -16,22 +20,25 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export default async function RootLayout({
+
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
-      <SessionProvider session={session}>
-      <body>
-        <TRPCReactProvider>
-          <LoginModal />
+    <AptosWalletAdapterProvider
+      optInWallets={['Petra']}
+      autoConnect={true}
+      dappConfig={{ network: Network.DEVNET }}
+    >
+      <html lang="en" className={`${GeistSans.variable}`}>
+        <body>
+          <TRPCReactProvider><LoginModal />
           <Navbar />
           {children}
-          <Toaster />
-        </TRPCReactProvider>
-      </body>
-      </SessionProvider>
-    </html>
+          <Toaster /></TRPCReactProvider>
+        </body>
+      </html>
+    </AptosWalletAdapterProvider>
   );
 }
