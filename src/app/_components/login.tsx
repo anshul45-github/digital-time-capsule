@@ -14,9 +14,15 @@ export const Login = () => {
         <div className="space-y-4">
           <form
             className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-medium px-6 py-3 rounded-lg border border-gray-200 shadow-sm transition duration-150"
+            action={async () => {
+                "use server"
+                await signIn("google")
+              }}
           >
+            <button type='submit' className='flex gap-4'>
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
             Continue with Google
+            </button>
           </form>
 
           <form 
