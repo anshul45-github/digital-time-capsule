@@ -28,6 +28,7 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
         const { displayName } = await req.json();
+        console.log(displayName);
         if(!displayName)
             return NextResponse.json({ error: "Invalid request" }, { status: 400 });
         const currentUser = await db.user.findUnique({

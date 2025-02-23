@@ -29,25 +29,27 @@ export default async function RootLayout({
     <WalletProvider>
       <html lang="en" className={`${GeistSans.variable}`}>
         <SessionProvider session={session}>
-        <body>
-          <TRPCReactProvider><LoginModal />
-          <div className="min-h-screen">
-            <div className="flex h-full w-full">
-              <div className="fixed left-0 top-0 hidden lg:block lg:w-[264px] h-full overflow-y-auto">
-                <Sidebar />
-              </div>
-              <div className="lg:pl-[264px]">
-                <Navbar />
-                <div className="mx-auto max-w-screen-2xl h-full">
-                  <main className="h-full py-8 px-6 flex flex-col">
-                    {children}
-                  </main>
+          <body className="min-h-screen w-full">
+            <TRPCReactProvider>
+              <LoginModal />
+              <div className="min-h-screen w-full">
+                <div className="flex h-full w-full">
+                  <div className="fixed left-0 top-0 hidden lg:block lg:w-[264px] h-full overflow-y-auto">
+                    <Sidebar />
+                  </div>
+                  <div className="flex-1 lg:pl-[264px]">
+                    <Navbar />
+                    <div className="mx-auto max-w-screen-2xl h-full w-full">
+                      <main className="h-full py-8 px-6 flex flex-col">
+                        {children}
+                      </main>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <Toaster /></TRPCReactProvider>
-        </body>
+              <Toaster />
+            </TRPCReactProvider>
+          </body>
         </SessionProvider>
       </html>
     </WalletProvider>

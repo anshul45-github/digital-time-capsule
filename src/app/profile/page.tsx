@@ -6,6 +6,9 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { CreateCapsuleModal } from '../_components/create-capsule-modal';
+import { useCreateCapsuleModal } from '~/hooks/use-create-capsule-modal';
+import { Button } from '~/components/ui/button';
 
 interface ProfileFormData {
   displayName: string | null;
