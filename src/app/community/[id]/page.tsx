@@ -186,8 +186,8 @@ const CommunityDetails = () => {
 
         {activeTab === 'about' && (
           <div className="max-w-2xl">
-            <h2 className="text-xl font-semibold mb-4">About {community.name}</h2>
-            <p className="text-gray-600 mb-6">{community.description}</p>
+            <h2 className="text-xl font-semibold mb-4">About {community?.name}</h2>
+            <p className="text-gray-600 mb-6">{community?.description}</p>
             
             <div className="space-y-4">
               <div>
