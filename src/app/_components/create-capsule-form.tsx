@@ -21,7 +21,7 @@ interface CreateCapsuleFormProps {
 
 export const CreateCapsuleFormSchema = z.object({
     title: z.string().min(1, "Required"),
-    caption: z.string().optional(),
+    caption: z.string(),
     mediaUrl: z.union([
         z.instanceof(File),
         z.string().transform((val) => val === "" ? undefined : val)
@@ -31,13 +31,13 @@ export const CreateCapsuleFormSchema = z.object({
         z.instanceof(File),
         z.string().transform((val) => val === "" ? undefined : val)
     ]).optional(),
-    tags: z.array(z.string()).optional(),
+    tags: z.array(z.string()),
     isPublic: z.boolean(),
     finalUnlockTime: z.coerce.date(),
     openThreshold: z.number().optional(),
     locationRegion: z.string().optional(),
     memoryGuardianId: z.string().optional(),
-    transferable: z.boolean().optional()
+    transferable: z.boolean()
 });
 
 export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
@@ -131,7 +131,7 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
                         <FormField control={form.control} name="caption" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>
-                                    Caption
+                                    Caption <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Textarea {...field} placeholder="Enter capsule caption" />
@@ -188,7 +188,7 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
                         <FormField control={form.control} name="tags" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>
-                                    Tags
+                                    Tags <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <div>
@@ -269,7 +269,7 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
                         <FormField control={form.control} name="transferable" render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="pr-3">
-                                    Transferable
+                                    Transferable <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
