@@ -199,9 +199,9 @@ export default function Explore() {
 
         {activeTab === 'public' && activeFilters.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {activeFilters.map(filter => (
+            {activeFilters.map((filter, index) => (
               <span
-                key={filter}
+                key={index}
                 className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm flex items-center gap-2"
               >
                 {filter}
@@ -221,9 +221,9 @@ export default function Explore() {
             <div>
               <h3 className="font-medium mb-3">Categories</h3>
               <div className="flex flex-wrap gap-2">
-                {filters.categories.map(category => (
+                {filters.categories.map((category, index) => (
                   <button
-                    key={category}
+                    key={index}
                     onClick={() => addFilter('category', category)}
                     className={`px-3 py-1 rounded-full text-sm transition-colors ${
                       selectedFilters.category === category
@@ -240,9 +240,9 @@ export default function Explore() {
             <div>
               <h3 className="font-medium mb-3">Unlock Timeframe</h3>
               <div className="flex flex-wrap gap-2">
-                {filters.timeframes.map(timeframe => (
+                {filters.timeframes.map((timeframe, index) => (
                   <button
-                    key={timeframe}
+                    key={index}
                     onClick={() => addFilter('timeframe', timeframe)}
                     className={`px-3 py-1 rounded-full text-sm transition-colors ${
                       selectedFilters.timeframe === timeframe
@@ -259,9 +259,9 @@ export default function Explore() {
             <div>
               <h3 className="font-medium mb-3">APT Rewards</h3>
               <div className="flex flex-wrap gap-2">
-                {filters.rewards.map(reward => (
+                {filters.rewards.map((reward, index) => (
                   <button
-                    key={reward}
+                    key={index}
                     onClick={() => addFilter('reward', reward)}
                     className={`px-3 py-1 rounded-full text-sm transition-colors ${
                       selectedFilters.reward === reward
@@ -278,9 +278,9 @@ export default function Explore() {
             <div>
               <h3 className="font-medium mb-3">Sort By</h3>
               <div className="flex flex-wrap gap-2">
-                {filters.sorting.map(sort => (
+                {filters.sorting.map((sort, index) => (
                   <button
-                    key={sort}
+                    key={index}
                     onClick={() => addFilter('sort', sort)}
                     className={`px-3 py-1 rounded-full text-sm transition-colors ${
                       selectedFilters.sort === sort
@@ -327,9 +327,9 @@ export default function Explore() {
                 <p className="text-gray-600 text-sm mb-4">{capsule.description}</p>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {capsule.tags.map((tag: any) => (
+                  {capsule.tags.map((tag: any, index) => (
                     <span
-                      key={tag}
+                      key={index}
                       className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-600"
                     >
                       #{tag}
