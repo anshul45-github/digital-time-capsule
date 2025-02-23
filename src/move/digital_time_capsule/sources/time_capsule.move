@@ -57,7 +57,7 @@ module dtc::time_capsule {
         let values = vector::empty<vector<u8>>();
 
         vector::push_back(&mut keys, string::utf8(b"media_pointer"));
-        vector::push_back(&mut types, string::utf8(b"string"));
+        vector::push_back(&mut types, string::utf8(b"0x1::string::String"));
         vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.media_pointer));
 
 
@@ -118,12 +118,6 @@ module dtc::time_capsule {
 
     }
 
-    
-    /// Helper function to get current blockchain time.
-    /// In practice, use aptos_framework::timestamp::now()
-    fun current_time(): u64 {
-        return aptos_framework::timestamp::now_seconds()
-    }
 
     
     /// Returns media pointer if opener satisfies unlock conditions; otherwise returns none.
