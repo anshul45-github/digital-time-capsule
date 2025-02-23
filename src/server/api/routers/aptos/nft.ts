@@ -1,15 +1,15 @@
 // NFT operations (minting, transferring time capsule NFTs)
 
 import { z } from "zod";
-import { Aptos, AptosConfig, MoveOption, MoveVector, Network } from "@aptos-labs/ts-sdk";
+import { Aptos, AptosConfig, MoveOption, type MoveVector, Network } from "@aptos-labs/ts-sdk";
 import type { PublicKey, Account, U8, U64 } from "@aptos-labs/ts-sdk";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import type {
   EntryFunctionArgumentTypes,
   SimpleEntryFunctionArgumentTypes,
 } from "@aptos-labs/ts-sdk";
+import { TRPCError } from "@trpc/server";
 
-// Define the contract address
 const CONTRACT_ADDRESS =
   process.env.CONTRACT_ADDRESS ?? "0xYourDeployedContractAddress";
 
@@ -28,10 +28,10 @@ export const nftRouter = createTRPCRouter({
         mediaType: z.enum(["Image", "Text", "Video", "Audio"]),
         caption: z.string(),
         tags: z.array(z.string()),
-        finalUnlockDate: z.number(),
+        finalUnlockDate: z.date(),
         earlyUnlockConditions: z.array(
           z.object({
-            unlockDate: z.number(),
+            unlockDate: z.date(),
             requiredPayment: z.number(),
           }),
         ),
@@ -64,8 +64,8 @@ export const nftRouter = createTRPCRouter({
 
         input.caption,
         input.tags,
-        input.finalUnlockDate,
-        input.earlyUnlockConditions.map((condition) => condition.unlockDate),
+        Math.floor(input.finalUnlockDate.getTime() / 1000),
+        input.earlyUnlockConditions.map((condition) => Math.floor(condition.unlockDate.getTime() / 1000)),
         input.earlyUnlockConditions.map(
           (condition) => condition.requiredPayment,
         ),
@@ -104,6 +104,22 @@ export const nftRouter = createTRPCRouter({
         transactionHash: committedTransaction.hash,
       });
 
-      return { executedTransaction };
+      const event_handle = `${CONTRACT_ADDRESS}::time_capsule::CapsuleCreatedEvent`
+      const field_name = "created_events";
+
+      const txDetailsResponse = await fetch(`https://api.devnet.aptoslabs.com/v1/accounts/${CONTRACT_ADDRESS}/events/${event_handle}/${field_name}`);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const txDetails = await txDetailsResponse.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+      if (!txDetails) {
+        throw new TRPCError({
+          message: "CapsuleCreatedEvent not found in transaction events.",
+          code: "INTERNAL_SERVER_ERROR",
+          cause: executedTransaction,
+        });
+      }      
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+      return {txnHash: executedTransaction, tokenId: txDetails.data.token_data_id};
     }),
 });
