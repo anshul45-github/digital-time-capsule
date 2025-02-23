@@ -3,15 +3,13 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
-import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
-import { Network } from "@aptos-labs/ts-sdk";
-
 import { TRPCReactProvider } from "~/trpc/react";
 import Navbar from "./_components/navbar";
 import { Toaster } from "~/components/ui/sonner";
 import { LoginModal } from "./_components/login-modal";
 import { auth } from "~/auth";
 import { SessionProvider } from "next-auth/react";
+import { WalletProvider } from "./_components/wallet_provider";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -25,11 +23,7 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
   return (
-    <AptosWalletAdapterProvider
-      optInWallets={['Petra']}
-      autoConnect={true}
-      dappConfig={{ network: Network.DEVNET }}
-    >
+    <WalletProvider>
       <html lang="en" className={`${GeistSans.variable}`}>
         <SessionProvider session={session}>
         <body>
@@ -40,6 +34,6 @@ export default async function RootLayout({
         </body>
         </SessionProvider>
       </html>
-    </AptosWalletAdapterProvider>
+    </WalletProvider>
   );
 }

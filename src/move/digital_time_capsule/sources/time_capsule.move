@@ -4,15 +4,7 @@ module dtc::time_capsule {
     use std::vector;
     use std::string;
     use std::option;
-
-
-    /// An enum representing the type of media contained in the capsule.
-    enum MediaType has copy, drop, store {
-        Image,
-        Text,
-        Video,
-        Audio
-    }
+    use aptos_framework::timestamp;
 
     /// Structure for an early unlock condition.
     struct EarlyUnlockCondition has copy, drop, store {
@@ -23,38 +15,43 @@ module dtc::time_capsule {
     /// Structure containing the on-chain metadata for a time capsule NFT.
     struct CapsuleMetadata has copy, drop, store {
         media_pointer: vector<u8>,         // A hash/CID pointer (e.g. from IPFS) for the media.
-        media_type: MediaType,               // The type of media.
-        caption: string::String,                 // A short caption (stored as bytes).
-        tags: vector<string::String>,            // An array of tag strings (each as bytes).
         final_unlock_date: u64,              // The Unix timestamp after which anyone can open the capsule.
         early_unlock_conditions: vector<EarlyUnlockCondition>, // Early unlock conditions.
-        location_region: vector<u8>,         // The region (e.g., extracted from a Google Maps link) in bytes.
-        is_public: bool,                     // True if publicly viewable; false if restricted.
+        location_region: option:Option<vector<u8>>,         // The region (e.g., extracted from a Google Maps link) in bytes.
         open_threshold: option:Option<u64>,                 // The number of unique open attempts required to auto-open.
-        open_attempts: u64,                  // The current number of open attempts.
         memory_guardian: option::Option<vector<u8>>,         // The designated guardians address as bytes.
         transferable: bool,                  // If true, the capsule can be transferred.
     }
 
+    /// Event that is emitted when a capsule is created.
+    struct CapsuleCreatedEvent has copy, drop, store {
+        token_data_id: token::TokenDataId,
+    }
+
+    /// Resource that holds capsule creation events.
+    struct TimeCapsuleEvents has key {
+        created_events: vector<CapsuleCreatedEvent>,
+    }
+
+    /// Initialize the events resource under the creator's account.
+    public entry fun init_events(account: &signer) {
+        let events = TimeCapsuleEvents {
+            created_events: vector::empty<CapsuleCreatedEvent>(),
+        };
+        move_to(account, events);
+    }
+
+
     /// Creates a new time capsule NFT.
     /// This function takes in a minimal set of parameters and serializes a CapsuleMetadata structure.
-/// Creates a new time capsule NFT.
-    /// This entry function serializes the capsule metadata and mints an NFT using the Aptos Token Object standard.
-    /// Instead of accepting custom types directly, this function uses supported types:
-    /// - `media_type_val`: u8 (0 = Image, 1 = Text, 2 = Video, 3 = Audio)
-    /// - `early_unlock_unlock_dates`: vector<u64>
-    /// - `early_unlock_payments`: vector<u64>
+    /// Creates a new time capsule NFT.
     public entry fun create_capsule(
         creator: &signer,
         media_pointer: vector<u8>,               // For example, an IPFS CID (as bytes)
-        media_type_val: u8,                        // 0: Image, 1: Text, 2: Video, 3: Audio
-        caption: string::String,                   // e.g., "Happy New Year!"
-        tags: vector<string::String>,              // e.g., ["celebration", "2025"]
         final_unlock_date: u64,                    // Unix timestamp
         early_unlock_unlock_dates: vector<u64>,    // Each early unlock date
         early_unlock_payments: vector<u64>,         // Corresponding required payments
-        location_region: vector<u8>,               // e.g., "North America" as bytes
-        is_public: bool,
+        location_region: option::Option<vector<u8>>,               // e.g., "North America" as bytes
         open_threshold: option:Option<u64>,        // Number of unique open attempts required to auto-open
         memory_guardian: option::Option<vector<u8>>,               // The designated guardians address as bytes
     ) {
@@ -76,25 +73,14 @@ module dtc::time_capsule {
         };
 
         // Convert u8 to MediaType.
-        let mtype = if (media_type_val == 0) { MediaType::Image }
-                    else if (media_type_val == 1) { MediaType::Text }
-                    else if (media_type_val == 2) { MediaType::Video }
-                    else if (media_type_val == 3) { MediaType::Audio }
-                    else { abort 100 };
-
         let transferable = if (option::is_some(&memory_guardian)) { true } else { false };
 
         let capsule_metadata = CapsuleMetadata {
             media_pointer,
-            media_type: mtype,
-            caption,
-            tags,
             final_unlock_date,
             early_unlock_conditions: conditions,
             location_region,
-            is_public,
             open_threshold,
-            open_attempts: 0,
             memory_guardian,
             transferable,
         };
@@ -112,7 +98,7 @@ module dtc::time_capsule {
 
         // Mint the non-fungible token using Aptos Token Object's function.
         // This call creates the NFT and associates the serialized metadata with it.
-        aptos_token::mint_token_object(
+        let token_obj = aptos_token::mint_token_object(
             creator,
             collection_name,
             // For token description, you could re-use caption or provide a dedicated description.
@@ -123,9 +109,54 @@ module dtc::time_capsule {
             vector::singleton(string::utf8(b"vector<u8>")), // property type
             vector::singleton(metadata_bytes)             // property value: the capsule metadata
         );
+
+        // Now, emit an event with the NFT's ID. For this to work, ensure the events resource has been initialized.
+        let events_ref = borrow_global_mut<TimeCapsuleEvents>(signer::address_of(creator));
+        let token_id = token_obj.token_data_id; // Assuming token_obj has this field.
+        vector::push_back(&mut events_ref.created_events, CapsuleCreatedEvent { token_data_id: token_id });
+
+    }
+    
+    /// Helper function to get current blockchain time.
+    /// In practice, use aptos_framework::timestamp::now()
+    fun current_time(): u64 {
+        return aptos_framework::timestamp::now().
     }
 
-    // Update open attempts for a capsule.
-    // Open capsule contract
+    /// Returns media pointer if opener satisfies unlock conditions; otherwise returns none.
+    public entry fun get_capsule_media_if_valid_opener(
+    capsule_id: vector<u8>,
+    open_attempts: u64,
+    user_location: vector<u8>,
+    current_date: u64
+): option::Option<vector<u8>> {
+    // Look up the capsule by its id (assumes the NFT is stored keyed by capsule_id)
+    let capsule_ref = borrow_global<CapsuleMetadata>(capsule_id);
+
+    // If the capsule is already unlocked or the final unlock date has passed, return the media pointer.
+    if (current_date >= capsule_ref.final_unlock_date) {
+        return option::some(capsule_ref.media_pointer);
+    };
+
+    // If an open threshold is defined and the provided open_attempts meet or exceed it, return the media pointer.
+    if (option::is_some(&capsule_ref.open_threshold)) {
+        let threshold = *option::borrow(&capsule_ref.open_threshold);
+        if (open_attempts >= threshold) {
+            return option::some(capsule_ref.media_pointer);
+        };
+    };
+
+    // Optionally, if you wish to validate the user's location, you might add an extra check.
+    // For example, if CapsuleMetadata includes an allowed_locations field, you could check:
+    //
+    // if (Vector::contains(&capsule_ref.allowed_locations, &user_location)) {
+    //     return option::some(capsule_ref.media_pointer);
+    // };
+
+    // If none of the conditions are met, return none.
+    option::none<vector<u8>>()
+}
+
+
     // transfer capsule to memory guardian (essentially delete the capsule for current user and let the new user make the capsule)
 }
