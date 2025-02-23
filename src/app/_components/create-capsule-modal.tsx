@@ -121,11 +121,11 @@ import { ResponsiveModal } from "./responsive-modal"
 // export default CreateCapsuleModal
 
 export const CreateCapsuleModal = () => {
-  const { isOpen, setIsOpen } = useCreateCapsuleModal();
+  const { isOpen, setIsOpen, close } = useCreateCapsuleModal();
 
   return (
     <ResponsiveModal open={isOpen} onOpenChange={setIsOpen}>
-      <CreateCapsuleForm />
+      <CreateCapsuleForm onClose={close} />
     </ResponsiveModal>
   )
 }
