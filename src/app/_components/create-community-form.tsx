@@ -59,6 +59,7 @@ export const CreateCommunityForm = ({ onClose }: CreateCommunityFormProps) => {
                 <DottedSeparator />
             </div>
             <CardContent className="p-7">
+                <CardTitle></CardTitle>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <div className="flex flex-col gap-y-4">
