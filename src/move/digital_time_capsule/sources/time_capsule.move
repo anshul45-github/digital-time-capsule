@@ -57,7 +57,7 @@ module dtc::time_capsule {
         let values = vector::empty<vector<u8>>();
 
         vector::push_back(&mut keys, string::utf8(b"media_pointer"));
-        vector::push_back(&mut types, string::utf8(b"string::String"));
+        vector::push_back(&mut types, string::utf8(b"string"));
         vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.media_pointer));
 
 
@@ -208,16 +208,36 @@ module dtc::time_capsule {
 
     }
 
+    /// Return all emitted module events with type T as a vector.
+    #[test_only]
+    public native fun emitted_events<T: copy + drop + store>(): vector<T>;
+    
+    /// Return true iff `msg` was emitted.
+    #[test_only]
+    public fun was_event_emitted<T: copy + drop + store>(msg: & T): bool {
+        let events = emitted_events<T>();
+        let len = vector::length(&events);
+        let i = 0u64;
+        while (i < len) {
+            if (*vector::borrow(&events, i) == *msg) {
+                return true;
+            };
+            i = i + 1;
+        };
+        false
+    }
+
     #[test(creator = @0x1, guardian = @0x2)]
-    fun test_create_capsule_and_view() {
+    fun test_create_capsule_and_view(creator: &signer, guardian: address) {
 
         // Create a capsule.
         let media_ptr = string::utf8(b"https://ipfs.io/ipfs/test-cid");
         let caption = string::utf8(b"Test Capsule");
-        create_capsule(&signer::borrow_address(@0x1), media_ptr, caption, true);
+        create_capsule(creator, media_ptr, caption, true);
 
         // For simplicity, assume the capsule we just created is the first event.
-        let event = *vector::borrow(&events_ref.created_events, 0);
+        let events = emitted_events<CapsuleEvent>();
+        let event = *vector::borrow(&events, 0);
         let token_id = event.token_data_id;
 
         // Set test parameters for unlocking.
@@ -229,6 +249,7 @@ module dtc::time_capsule {
         let current_date = 2000;
         let early_unlock_dates = vector::empty<u64>();
         let early_unlock_plan = option::none<u64>();
+
 
         // Call the view function.
         let result = get_capsule_media_if_valid_opener(
@@ -245,27 +266,63 @@ module dtc::time_capsule {
 
         // Assert that the media pointer returned matches what we set.
         assert!(result == string::utf8(b"https://ipfs.io/ipfs/test-cid"), 1);
+
+        let media_ptr2 = string::utf8(b"https://ipfs.io/ipfs/test-cid2");
+
+        create_capsule(creator, media_ptr2, caption, false);
+
+        if (was_event_emitted<CapsuleEvent>(&CapsuleEvent { token_data_id: token_id })) {
+            let events = emitted_events<CapsuleEvent>();
+            let event = *vector::borrow(&events, 0);
+            let token_id = event.token_data_id;
+
+            // Set test parameters for unlocking.
+            let final_unlock_date = 500;
+            let open_attempts = 70;
+            let open_threshold = option::some(71);
+            let location_region = option::none<String>();
+            let user_location = string::utf8(b""); // no location required
+            let current_date = 200;
+            let early_unlock_dates = vector::empty<u64>();
+            let early_unlock_plan = option::none<u64>();
+
+
+            // Call the view function.
+            let result = get_capsule_media_if_valid_opener(
+                token_id,
+                final_unlock_date,
+                open_attempts,
+                open_threshold,
+                location_region,
+                user_location,
+                current_date,
+                early_unlock_dates,
+                early_unlock_plan
+            );
+
+            // Assert that the media pointer returned matches what we set.
+            assert!(result == string::utf8(b"https://ipfs.io/ipfs/test-cid2"), 1);
+        }
     }
 
     #[test(creator = @0x1, guardian = @0x2)]
-    fun test_transfer_to_memory_guardian() {
+    fun test_transfer_to_memory_guardian(creator: &signer, guardian: address) {
 
         // Create a capsule.
         let media_ptr = string::utf8(b"https://ipfs.io/ipfs/test-cid");
         let caption = string::utf8(b"Test Capsule");
-        create_capsule(&signer::borrow(@0x1), media_ptr, caption, true);
-
-        // Retrieve the token id from events.
-        let events_ref = borrow_global<TimeCapsuleEvents>(signer::address_of(&signer::borrow(@0x1)));
-        let event = *vector::borrow(&events_ref.created_events, 0);
+        let events = emitted_events<CapsuleEvent>();
+        let event = *vector::borrow(&events, 0);
         let token_id = event.token_data_id;
 
+        create_capsule(creator, media_ptr, caption, true);
+
         // Transfer the token from creator (@0x1) to guardian (@0x2).
-        transfer_to_memory_guardian(token_id, &signer::borrow(@0x1), signer::address_of(&signer::borrow(@0x2)));
+        transfer_to_memory_guardian(token_id, creator, @0x2);
 
         // Verify transfer: the token's owner should now be @0x2.
         let token_obj = borrowFromAddress(token_id);
-        assert!(object::owner(token_obj) == signer::address_of(&signer::borrow(@0x2)), 2);
+        assert!(object::owner(token_obj) == @0x2, 2);
     }
 }
 

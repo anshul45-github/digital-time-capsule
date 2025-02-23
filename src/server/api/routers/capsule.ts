@@ -137,4 +137,128 @@ export const capsuleRouter = createTRPCRouter({
       return "";
 
     }),
+
+    fetchCommunityCapsules: publicProcedure
+      .input(
+        z.object({
+          communityId: z.string(),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        return await ctx.db.community.findMany({
+          where: {
+            id: input.communityId,
+          },
+          include: {
+            capsules: {
+              include: {
+                creator: true,
+                earlyUnlockDates: true,
+              }
+            }
+          }
+        });
+      }),
+
+      fetchGroupCapsules: publicProcedure
+      .input(
+        z.object({
+          groupId: z.string(),
+        }),
+      )
+      .query(async ({ input, ctx }) => {
+        return await ctx.db.group.findMany({
+          where: {
+            id: input.groupId,
+          },
+          include: {
+            capsules: {
+              include: {
+                creator: true,
+                earlyUnlockDates: true,
+              }
+            }
+          }
+        });
+      }),
+
+    fetchUserFriendCapsules: publicProcedure
+    .input(
+      z.object({
+        friendId: z.string(),
+        userId: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const arr1 =  await ctx.db.user.findMany({
+        where: {
+          id: input.friendId,
+        },
+        include: {
+          sharedCapsules: {
+            where: {
+              creatorId: input.friendId,
+            },
+            include: {
+              creator: true,
+              earlyUnlockDates: true,
+            }
+          }
+        }
+      });
+
+      const arr2 =  await ctx.db.user.findMany({
+        where: {
+          id: input.userId,
+        },
+        include: {
+          sharedCapsules: {
+            where: {
+              creatorId: input.friendId,
+            },
+            include: {
+              creator: true,
+              earlyUnlockDates: true,
+            }
+          }
+        }
+      });
+      return {arr1, arr2};
+    }),
+
+    searchCapsules: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      return await ctx.db.capsule.findMany({
+        where: {
+          OR: [
+            {
+              title: {
+                contains: input.query,
+              },
+            },
+            {
+              caption: {
+                contains: input.query,
+              },
+            },
+            {
+              tags: {
+                hasSome: [input.query],
+              },
+            },
+          ],
+        },
+        include: {
+          creator: true,
+          earlyUnlockDates: true,
+        },
+      });
+    }),
+
+    //TODO: Add procedure for capsule updating
 });
