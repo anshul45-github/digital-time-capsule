@@ -1,10 +1,11 @@
 "use client";
-import { Loader, LogOut } from "lucide-react";
+import { Loader, LogOut, User } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu"
 import axios from 'axios';
+import { useRouter } from "next/navigation";
 
 export const UserButton = () => {
     const { data: session, status } = useSession();
@@ -19,7 +20,8 @@ export const UserButton = () => {
             setUser(response.data.user);
         }
         fetch();
-    }, [])
+    }, []);
+    const router = useRouter();
     const { image, name, email } = user;
     const avatarFallback = name!.charAt(0).toUpperCase();
     return (
@@ -36,6 +38,10 @@ export const UserButton = () => {
                 <DropdownMenuItem onClick={() => signOut()} className="h-10">
                     <LogOut className="w-4 h-4 mr-2" />
                     Log out
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/profile")} className="h-10">
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

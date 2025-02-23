@@ -118,6 +118,7 @@ model Community {
     id          String            @id @default(cuid())
     name        String
     description String?
+    joinCode    String
     members     CommunityMember[]
     capsules    Capsule[]
 }
@@ -129,8 +130,10 @@ model Capsule {
     nftId                String // on-chain NFT identifier
     
     mediaType            MediaType
+    title                String
     caption              String
     tags                 String[] // list of tags for search and filtering
+    isPublic             boolean
     
     finalUnlockDate      DateTime // after which anyone can open the capsule. these are just to show on frontend
     earlyUnlockDates     EarlyUnlockCondition[] // list of early unlock conditions. these are just to show on frontend
@@ -146,7 +149,6 @@ model Capsule {
     transactionHash   String?
     eventCreationNum  Int?
 
-    isPublic             Boolean // true if accessible globally; false if private
     sharedGroups      Group[]
     sharedCommunities Community[]
     sharedUsers       User[]      @relation("SharedCapsules")

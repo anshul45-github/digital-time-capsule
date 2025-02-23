@@ -1,3 +1,4 @@
+"use client";
 import { useState } from 'react';
 import { ArrowLeft, Calendar, Lock, Users, MessageSquare, Share2, Heart } from 'lucide-react';
 import { Capsule } from '@prisma/client';
@@ -27,13 +28,12 @@ export default function CapsuleDetails({ capsule, onBack }: CapsuleDetailsProps)
           {/* Hero Image */}
           <div className="relative h-80">
             <img
-              src={capsule.mediaUrl}
-              alt={capsule.caption}
+              // alt={capsule.caption}
               className="w-full h-full object-cover"
             />
             <div className="absolute top-4 right-4">
               <div className="bg-purple-600 px-3 py-1 rounded-full text-white text-sm font-medium">
-                {capsule.tags.charAt(0).toUpperCase() + capsule.tags.slice(1)}
+                {/* {capsule.tags.charAt(0).toUpperCase() + capsule.tags.slice(1)} */}
               </div>
             </div>
           </div>
@@ -41,7 +41,7 @@ export default function CapsuleDetails({ capsule, onBack }: CapsuleDetailsProps)
           {/* Content */}
           <div className="p-8">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold">{capsule.caption}</h1>
+              <h1 className="text-3xl font-bold">ID</h1>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setIsLiked(!isLiked)}
@@ -60,31 +60,31 @@ export default function CapsuleDetails({ capsule, onBack }: CapsuleDetailsProps)
             <div className="flex items-center gap-6 mb-8 text-sm text-gray-500">
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                Unlocks {new Date(capsule.finalUnlockDate).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
+                 {new Date().toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
               </span>
               <span className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                {capsule.allowedUsers} participants
+                19 participants
               </span>
               <span className="flex items-center gap-1">
                 <Lock className="w-4 h-4" />
-                <span className="font-medium text-purple-600">{capsule.openThreshold} APT</span>
+                <span className="font-medium text-purple-600">1900 APT</span>
               </span>
             </div>
 
             <div className="prose max-w-none mb-8">
               <h2 className="text-xl font-semibold mb-4">About this Time Capsule</h2>
-              <p className="text-gray-600">{capsule.caption}</p>
+              <p className="text-gray-600">College memories</p>
             </div>
 
             <div className="mb-8">
               <h3 className="font-medium mb-3">Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {capsule.tags.map(tag => (
+                {['entertainment', 'college', '2025'].map(tag => (
                   <span
                     key={tag}
                     className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600"
