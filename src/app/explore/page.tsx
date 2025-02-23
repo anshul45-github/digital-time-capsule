@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Search, SlidersHorizontal, Calendar, Lock, Users, Trophy, X, Plus, Globe, UserCircle } from 'lucide-react';
 import Link from 'next/link';
+import { Form } from '~/components/ui/form';
+import { CreateCommunityModal } from '../_components/create-community-modal';
 
 interface Capsule {
   id: string;
@@ -117,7 +119,7 @@ export default function Explore() {
 
   const handleCreateCommunity = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle community creation
+    console.log()
     setShowCreateCommunity(false);
   };
 
@@ -395,90 +397,7 @@ export default function Explore() {
 
       {/* Create Community Modal */}
       {showCreateCommunity && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl w-full max-w-2xl mx-4">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-2xl font-bold">Create Community</h2>
-              <button
-                onClick={() => setShowCreateCommunity(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCommunity} className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Community Name
-                </label>
-                <input
-                  type="text"
-                  value={newCommunity.name}
-                  onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
-                  placeholder="Enter community name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={newCommunity.description}
-                  onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
-                  placeholder="What's this community about?"
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Privacy
-                </label>
-                <select
-                  value={newCommunity.privacy}
-                  onChange={(e) => setNewCommunity({ ...newCommunity, privacy: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="public">Public - Anyone can join</option>
-                  <option value="private">Private - Invitation only</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  value={newCommunity.tags}
-                  onChange={(e) => setNewCommunity({ ...newCommunity, tags: e.target.value })}
-                  placeholder="Add tags (comma separated)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateCommunity(false)}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Create Community
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateCommunityModal setIsOpen={setShowCreateCommunity} close={() => setShowCreateCommunity(false)} />
       )}
     </div>
   );

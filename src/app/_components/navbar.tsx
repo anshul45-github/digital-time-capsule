@@ -41,43 +41,33 @@ export const Navbar = () => {
           </span>
         </button>
       )}
-        <div className="flex items-center gap-1">
-          {session && (
-            // <Link
-            //   href="/profile"
-            //   className={`px-4 py-2 rounded-lg transition-colors ${isActive('/profile')}`}
-            // >
-            //   <span className="flex items-center gap-2">
-            //     <User className="w-4 h-4" />
-            //     Profile
-            //   </span>
-            // </Link>
-            <UserButton />)
-            
-            {!Wallet.connected &&
-            <Button
-              onClick={() => Wallet.connect("Petra")}
-              className={`rounded-lg bg-red-400 px-4 py-2 transition-colors duration-300 ease-in-out hover:bg-red-600 ${isActive("/profile")}`}
-            >
-              <span className="flex items-center gap-2">
-                <LinkImg className="h-4 w-4" />
-                Connect
-              </span>
-            </Button>
-          )}
-          {Wallet.connected && (
-            <Button
-              onClick={() => Wallet.disconnect()}
-              className={`rounded-lg bg-green-400 px-4 py-2 transition-colors duration-300 ease-in-out hover:bg-green-600 ${isActive("/profile")}`}
-            >
-              <span className="flex items-center gap-2">
-                <Unlink className="h-4 w-4" />
-                Disconnect
-              </span>
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="flex items-center gap-6">
+        {!Wallet.connected && (
+          <Button
+            onClick={() => Wallet.connect("Petra")}
+            className={`rounded-lg bg-red-400 px-4 py-2 transition-colors duration-300 ease-in-out hover:bg-red-600 ${isActive("/profile")}`}
+          >
+            <span className="flex items-center gap-2">
+              <LinkImg className="h-4 w-4" />
+              Connect
+            </span>
+          </Button>
+        )}
+        {Wallet.connected && (
+          <Button
+            onClick={() => Wallet.disconnect()}
+            className={`rounded-lg bg-green-400 px-4 py-2 transition-colors duration-300 ease-in-out hover:bg-green-600 ${isActive("/profile")}`}
+          >
+            <span className="flex items-center gap-2">
+              <Unlink className="h-4 w-4" />
+              Disconnect
+            </span>
+          </Button>
+        )}
+        {session && (
+          <UserButton />
+        )}
+      </div>
     </nav>
   );
 };
