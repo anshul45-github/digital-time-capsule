@@ -1,8 +1,14 @@
 // NFT operations (minting, transferring time capsule NFTs)
 
 import { z } from "zod";
-import { Aptos, AptosConfig, MoveOption, type MoveVector, Network } from "@aptos-labs/ts-sdk";
-import type { PublicKey, Account, U8, U64 } from "@aptos-labs/ts-sdk";
+import {
+  Aptos,
+  AptosConfig,
+  MoveOption,
+  type MoveVector,
+  Network,
+} from "@aptos-labs/ts-sdk";
+import type { Account, U8, U64 } from "@aptos-labs/ts-sdk";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import type {
   EntryFunctionArgumentTypes,
@@ -22,8 +28,6 @@ export const nftRouter = createTRPCRouter({
     .input(
       z.object({
         walletAccount: z.custom<Account>(),
-        walletAddress: z.string(),
-        walletPrivateKey: z.custom<PublicKey>(),
         mediaPointer: z.string(), // Expect a string (CID) that you'll convert to bytes.
         mediaType: z.enum(["Image", "Text", "Video", "Audio"]),
         caption: z.string(),
@@ -52,31 +56,25 @@ export const nftRouter = createTRPCRouter({
         | EntryFunctionArgumentTypes
         | SimpleEntryFunctionArgumentTypes
       )[] = [
-        //creator
-        toBytes(input.mediaPointer),
-        input.mediaType === "Image"
-          ? 0
-          : input.mediaType === "Text"
-            ? 1
-            : input.mediaType === "Video"
-              ? 2
-              : 3,
-
+        input.walletAccount.accountAddress,
         input.caption,
-        input.tags,
         Math.floor(input.finalUnlockDate.getTime() / 1000),
-        input.earlyUnlockConditions.map((condition) => Math.floor(condition.unlockDate.getTime() / 1000)),
+        input.earlyUnlockConditions.map((condition) =>
+          Math.floor(condition.unlockDate.getTime() / 1000),
+        ),
         input.earlyUnlockConditions.map(
           (condition) => condition.requiredPayment,
         ),
         toBytes(input.locationRegion),
         input.isPublic,
         input.openThreshold ?? new MoveOption<U64>(),
-        input.memoryGuardian ? toBytes(input.memoryGuardian) : new MoveOption<MoveVector<U8>>(),
+        input.memoryGuardian
+          ? toBytes(input.memoryGuardian)
+          : new MoveOption<MoveVector<U8>>(),
       ];
 
       const txn = aptos.transaction.build.simple({
-        sender: input.walletAddress,
+        sender: input.walletAccount.accountAddress,
         data: {
           function: `${CONTRACT_ADDRESS}::time_capsule::create_capsule`,
           functionArguments: args,
@@ -85,7 +83,7 @@ export const nftRouter = createTRPCRouter({
 
       const [userTransactionResponse] = await aptos.transaction.simulate.simple(
         {
-          signerPublicKey: input.walletPrivateKey,
+          signerPublicKey: input.walletAccount.publicKey,
           transaction: await txn,
         },
       );
@@ -104,10 +102,12 @@ export const nftRouter = createTRPCRouter({
         transactionHash: committedTransaction.hash,
       });
 
-      const event_handle = `${CONTRACT_ADDRESS}::time_capsule::CapsuleCreatedEvent`
+      const event_handle = `${CONTRACT_ADDRESS}::time_capsule::CapsuleCreatedEvent`;
       const field_name = "created_events";
 
-      const txDetailsResponse = await fetch(`https://api.devnet.aptoslabs.com/v1/accounts/${CONTRACT_ADDRESS}/events/${event_handle}/${field_name}`);
+      const txDetailsResponse = await fetch(
+        `https://api.devnet.aptoslabs.com/v1/accounts/${CONTRACT_ADDRESS}/events/${event_handle}/${field_name}`,
+      );
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const txDetails = await txDetailsResponse.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
@@ -117,9 +117,90 @@ export const nftRouter = createTRPCRouter({
           code: "INTERNAL_SERVER_ERROR",
           cause: executedTransaction,
         });
-      }      
+      }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      return {txnHash: executedTransaction, tokenId: txDetails.data.token_data_id};
+      return {
+        txnHash: executedTransaction.hash,
+        txnStatus: executedTransaction.success,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        tokenId: txDetails.data.token_data_id,
+      };
+    }),
+
+  acceptGuardianInvite: publicProcedure
+    .input(
+      z.object({
+        capsuleId: z.string(),
+        guardianWallet: z.custom<Account>(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const capsule = await ctx.db.capsule.findUnique({
+        where: { id: input.capsuleId },
+      });
+      if (!capsule?.transferable) {
+        throw Error("Trying to migrate a non transferrable capsule");
+      }
+
+      //important to note that money cuts from the invite acceptee's account
+      const txn = aptos.transaction.build.simple({
+        sender: input.guardianWallet.accountAddress,
+        data: {
+          function: `${CONTRACT_ADDRESS}::time_capsule::transfer_to_memory_guardian`,
+          functionArguments: [
+            capsule?.nftId,
+            input.guardianWallet.accountAddress,
+          ],
+        },
+      });
+
+      const [userTransactionResponse] = await aptos.transaction.simulate.simple(
+        {
+          signerPublicKey: input.guardianWallet.publicKey,
+          transaction: await txn,
+        },
+      );
+
+      const senderAuthenticator = aptos.transaction.sign({
+        signer: input.guardianWallet,
+        transaction: await txn,
+      });
+
+      const committedTransaction = await aptos.transaction.submit.simple({
+        transaction: await txn,
+        senderAuthenticator,
+      });
+
+      try {
+        const executedTransaction = await aptos.waitForTransaction({
+          transactionHash: committedTransaction.hash,
+        });
+        if (capsule.memoryGuardianId) {
+          return await ctx.db.capsule.update({
+            where: {
+              id: input.capsuleId,
+            },
+            data: {
+              memoryGuardian: {
+                disconnect: true,
+              },
+              creator: { connect: { id: capsule.memoryGuardianId } },
+              transactionHash: executedTransaction.hash,
+              transactionStatus: executedTransaction.success,
+              transferable: false,
+            },
+          });
+        }
+        else{
+          return capsule;
+        }
+      } catch (err) {
+        throw new TRPCError({
+          message: "Error while accepting guardian invite",
+          code: "INTERNAL_SERVER_ERROR",
+          cause: err,
+        });
+      }
+
     }),
 });
