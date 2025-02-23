@@ -1,59 +1,50 @@
 "use client";
+
 import { useForm } from "react-hook-form";
+
 import { z } from "zod";
+
+import { DottedSeparator } from "~/app/_components/dotted-separator";
+
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { DottedSeparator } from "./dotted-separator";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+
 import { toast } from "sonner";
+
 import { useRouter } from "next/navigation";
 
-interface CreateCapsuleFormProps {
+import axios from 'axios';
+
+interface CreateCommunityFormProps {
     onClose?: () => void;
 }
 
-export const CreateCapsuleFormSchema = z.object({
+export const CreateCommunityFormSchema = z.object({
     title: z.string().min(1, "Required"),
-    caption: z.string(),
-    mediaUrl: z.union([
-        z.instanceof(File),
-        z.string().transform((val) => val === "" ? undefined : val)
-    ]),
-    mediaType: z.string(),
-    coverImgUrl: z.union([
-        z.instanceof(File),
-        z.string().transform((val) => val === "" ? undefined : val)
-    ]),
-    tags: z.string(),
-    isPublic: z.boolean(),
-    finalUnlockTime: z.coerce.date()
+    description: z.string().min(1, "Required"),
 })
 
-export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
-    const form = useForm<z.infer<typeof CreateCapsuleFormSchema>>({
+export const CreateCommunityForm = ({ onClose }: CreateCommunityFormProps) => {
+    const form = useForm<z.infer<typeof CreateCommunityFormSchema>>({
         defaultValues: {
             title: "",
-            caption: "",
-            mediaUrl: "",
-            mediaType: "",
-            coverImgUrl: "",
-            tags: "",
-            isPublic: false,
-            finalUnlockTime: new Date()
+            description: "",
         },
     });
 
     const router = useRouter();
 
-    const onSubmit = async (values: z.infer<typeof CreateCapsuleFormSchema>) => {
+    const onSubmit = async (values: z.infer<typeof CreateCommunityFormSchema>) => {
         try {
-            const res = await post("/api/capsules", values);
-            toast.success("Capsule created successfully");
-            console.log(res);
+            const res = await axios.post("/api/community", values);
+            toast.success("Community created successfully");
+            onClose && onClose();
+            router.push(`/community/${res.data.id}`)
         } catch (error) {
-            toast.error("Failed to create capsule");
+            toast.error("Failed to create community");
         }
     }
 
@@ -61,13 +52,14 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
         <Card className="w-full h-full border-none shadow-none">
             <CardHeader className="flex p-7">
                 <CardTitle className="text-xl font-bold">
-                    Create a new capsule
+                    Create a new community
                 </CardTitle>
             </CardHeader>
             <div className="px-7">
                 <DottedSeparator />
             </div>
             <CardContent className="p-7">
+                <CardTitle></CardTitle>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <div className="flex flex-col gap-y-4">
@@ -77,18 +69,18 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
                                     Title
                                 </FormLabel>
                                 <FormControl>
-                                    <Input {...field} placeholder="Enter capsule title" />
+                                    <Input {...field} placeholder="Enter community name" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="caption" render={({ field }) => (
+                        <FormField control={form.control} name="description" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>
-                                    Caption
+                                    Description
                                 </FormLabel>
                                 <FormControl>
-                                    <Textarea {...field} placeholder="Enter capsule caption" />
+                                    <Textarea {...field} placeholder="Enter community description" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -108,8 +100,4 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
             </CardContent>
         </Card>
     )
-}
-
-function post(arg0: string, data: { title: string; caption: string; mediaType: string; tags: string; isPublic: boolean; finalUnlockTime: Date; mediaUrl?: string | File | undefined; coverImgUrl?: string | File | undefined; }) {
-    throw new Error("Function not implemented.");
 }

@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-
+import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 interface ProfileFormData {
   displayName: string | null;
 }
@@ -15,14 +16,14 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const [name, setName] = useState('');
+  const [user, setUser] = useState<typeof User>();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const response = await axios.get('/api/profile');
-        console.log('Profile:', response.data);
-        setName(response.data.user.name);
+        console.log('Profile:', response.data.user);
+        setUser(response.data.user);
       } catch (error) {
         console.error('Failed to fetch profile:', error);
       }
@@ -44,7 +45,7 @@ export default function Profile() {
     formState: { errors, isDirty }
   } = useForm<ProfileFormData>({
     defaultValues: {
-      displayName: name,
+      displayName: user ? user.name : '',
     }
   });
 
@@ -86,7 +87,7 @@ export default function Profile() {
               <User className="w-12 h-12 text-purple-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold mb-2">{name}</h1>
+              <h1 className="text-2xl font-bold mb-2">{user?.name}</h1>
               <div className="flex items-center gap-4 text-gray-600">
                 <span className="flex items-center gap-1">
                   <Medal className="w-4 h-4 text-yellow-500" />
@@ -168,7 +169,7 @@ export default function Profile() {
                     className={`px-6 py-2 rounded-lg flex items-center gap-2 ${
                       !isDirty
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                        : 'bg-purple-600 text-black hover:bg-purple-700'
                     }`}
                   >
                     {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
