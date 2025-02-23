@@ -7,6 +7,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface CreateCapsuleFormProps {
     onClose?: () => void;
@@ -43,8 +45,16 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
         },
     });
 
-    const onSubmit = (data: z.infer<typeof CreateCapsuleFormSchema>) => {
-        console.log(data);
+    const router = useRouter();
+
+    const onSubmit = async (values: z.infer<typeof CreateCapsuleFormSchema>) => {
+        try {
+            const res = await post("/api/capsules", values);
+            toast.success("Capsule created successfully");
+            console.log(res);
+        } catch (error) {
+            toast.error("Failed to create capsule");
+        }
     }
 
     return (
@@ -98,4 +108,8 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
             </CardContent>
         </Card>
     )
+}
+
+function post(arg0: string, data: { title: string; caption: string; mediaType: string; tags: string; isPublic: boolean; finalUnlockTime: Date; mediaUrl?: string | File | undefined; coverImgUrl?: string | File | undefined; }) {
+    throw new Error("Function not implemented.");
 }

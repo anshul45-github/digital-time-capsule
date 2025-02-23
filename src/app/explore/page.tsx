@@ -2,7 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { Search, SlidersHorizontal, Calendar, Lock, Users, Trophy, X, Plus, Globe, UserCircle } from 'lucide-react';
-import { Capsule } from '../types/capsule';
+import Link from 'next/link';
+
+interface Capsule {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  unlockDate: string;
+  participants: number;
+  aptReward: number;
+  category: string;
+  creator: string;
+  tags: string[];
+}
 
 const sampleCapsules: Capsule[] = [
   {
@@ -119,7 +132,7 @@ export default function Explore() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-white">Explore Time Capsules</h1>
+        <h1 className="text-3xl font-bold text-black">Explore Time Capsules</h1>
         <button
           onClick={() => setShowCreateCommunity(true)}
           className="bg-white px-4 py-2 rounded-lg flex items-center gap-2 text-purple-600 hover:bg-purple-50 transition-colors"
@@ -286,9 +299,10 @@ export default function Explore() {
       {activeTab === 'public' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sampleCapsules.map((capsule) => (
+            <Link href={`/explore-capsule/${capsule.id}`}>
             <div
               key={capsule.id}
-              className="group bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden transition-transform hover:transform hover:scale-[1.02]"
+              className="group hover:shadow-sm border h-full bg-white/90 backdrop-blur-sm rounded-xl overflow-hidden transition-transform hover:transform hover:scale-[1.02]"
             >
               <div className="relative h-48 overflow-hidden">
                 <img
@@ -305,13 +319,13 @@ export default function Explore() {
 
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-semibold">{capsule.title}</h3>
+                  <h3 className="text-xl group-hover:text-sky-700 transition font-semibold">{capsule.title}</h3>
                   <span className="text-sm text-gray-500">{capsule.creator}</span>
                 </div>
-                <p className="text-gray-600 mb-4">{capsule.description}</p>
+                <p className="text-gray-600 text-sm mb-4">{capsule.description}</p>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {capsule.tags.map(tag => (
+                  {capsule.tags.map((tag: any) => (
                     <span
                       key={tag}
                       className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-600"
@@ -343,6 +357,7 @@ export default function Explore() {
                 </div>
               </div>
             </div>
+            </Link>
           ))}
         </div>
       ) : (

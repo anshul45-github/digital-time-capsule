@@ -117,6 +117,7 @@ model Community {
     id          String   @id @default(cuid())
     name        String
     description String?
+    joinCode    String
     members     CommunityMember[]
     capsules    Capsule[]
 }
@@ -127,6 +128,7 @@ model Capsule {
     creator          User                   @relation(fields: [creatorId], references: [id])
     nftId            String // on-chain NFT identifier
     mediaType        MediaType
+    title            String
     caption          String
     tags             String[] // list of tags for search and filtering
     isPublic         Boolean // true if accessible globally; false if private
