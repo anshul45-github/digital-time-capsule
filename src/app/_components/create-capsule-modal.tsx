@@ -6,8 +6,8 @@ interface CreateCapsuleModalProps {
 
 export function CreateCapsuleModal({ onClose }: CreateCapsuleModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-2xl mx-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold">Create Time Capsule</h2>
           <button
@@ -18,7 +18,7 @@ export function CreateCapsuleModal({ onClose }: CreateCapsuleModalProps) {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto">
           {/* Upload Section */}
           <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
             <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -98,7 +98,7 @@ export function CreateCapsuleModal({ onClose }: CreateCapsuleModalProps) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-2xl">
+        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-2xl mt-auto">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -113,3 +113,5 @@ export function CreateCapsuleModal({ onClose }: CreateCapsuleModalProps) {
     </div>
   );
 }
+
+export default CreateCapsuleModal

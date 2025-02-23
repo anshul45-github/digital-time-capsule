@@ -1,15 +1,18 @@
 "use client";
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 import { useEffect } from 'react';
 import useRegisterModal from '~/hooks/use-register-modal';
  
 export default function LoginPage() {
   const registerModal = useRegisterModal();
 
-  useEffect(() => {
-    if(registerModal.isOpen === false) {
-      registerModal.onOpen();
-    }
-  }, [registerModal.isOpen]);
+  const { data: session, status } = useSession();
+
+  if(!session) {
+    registerModal.onOpen();
+    redirect("/");
+  }
 
   return (
     <div>

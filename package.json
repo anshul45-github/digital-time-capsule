@@ -26,7 +26,11 @@
     "@aptos-labs/wallet-adapter-ant-design": "^4.0.3",
     "@aptos-labs/wallet-adapter-react": "^4.1.0",
     "@auth/prisma-adapter": "^2.7.2",
+    "@hookform/resolvers": "^4.1.1",
+    "@okwallet/aptos-wallet-adapter": "^0.0.7",
     "@prisma/client": "^5.14.0",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@t3-oss/env-nextjs": "^0.10.1",
     "@tanstack/react-query": "^5.50.0",
@@ -54,7 +58,7 @@
     "superjson": "^2.2.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.3",
+    "zod": "^3.24.2",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

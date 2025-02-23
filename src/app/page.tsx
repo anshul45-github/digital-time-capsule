@@ -4,12 +4,16 @@ import { Plus } from 'lucide-react';
 import { CreateCapsuleModal } from './_components/create-capsule-modal';
 import { FeaturedCapsules } from './_components/featured-capsules';
 import { Categories } from './_components/categories';
+import { useEffect } from 'react';
+import axios from 'axios';
+import { CreateCapsuleForm } from './_components/create-capsule-form';
 
 export default function Home() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   return (
     <div className="container mx-auto px-4 py-8">
+      TODO : Change capsule schema - Title = String,  CoverImgUrl = String
       {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-neutral-700 mb-4">
@@ -25,6 +29,10 @@ export default function Home() {
           <Plus className="w-5 h-5" />
           Create Your Time Capsule
         </button>
+      </div>
+      <div className="mb-12">
+
+        <CreateCapsuleForm />
       </div>
 
       {/* Featured Capsules */}
