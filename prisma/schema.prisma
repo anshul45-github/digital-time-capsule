@@ -62,16 +62,17 @@ model User {
     emailVerified DateTime?
     image         String?
 
-    accounts      Account[]
-    sessions      Session[]
+    accounts Account[]
+    sessions Session[]
 
-    capsules      Capsule[]
+    capsules        Capsule[]
+    guardianInvites Capsule[] @relation("memoryGuardian")
 
-    groups        GroupMember[]
-    communities   CommunityMember[]
-    sharedCapsules Capsule[] @relation("SharedCapsules")
+    groups         GroupMember[]
+    communities    CommunityMember[]
+    sharedCapsules Capsule[]         @relation("SharedCapsules")
 
-    posts         Post[]
+    posts Post[]
 }
 
 model VerificationToken {
@@ -83,38 +84,38 @@ model VerificationToken {
 }
 
 model GroupMember {
-    id     String @id @default(cuid())
-    userId String
+    id      String  @id @default(cuid())
+    userId  String
     groupId String
-    admin Boolean @default(false)
-    user   User   @relation(fields: [userId], references: [id])
-    group  Group  @relation(fields: [groupId], references: [id])
+    admin   Boolean @default(false)
+    user    User    @relation(fields: [userId], references: [id])
+    group   Group   @relation(fields: [groupId], references: [id])
 
     @@unique([userId, groupId])
 }
 
 model CommunityMember {
-    id     String @id @default(cuid())
-    userId String
+    id          String    @id @default(cuid())
+    userId      String
     communityId String
-    admin Boolean @default(false)
-    user   User   @relation(fields: [userId], references: [id])
-    group  Community  @relation(fields: [communityId], references: [id])
+    admin       Boolean   @default(false)
+    user        User      @relation(fields: [userId], references: [id])
+    group       Community @relation(fields: [communityId], references: [id])
 
     @@unique([userId, communityId])
 }
 
 model Group {
-    id          String   @id @default(cuid())
-    name        String
-    description String?
-    members     GroupMember[]
-    capsules    Capsule[]
-    group_size_cap  Int
+    id             String        @id @default(cuid())
+    name           String
+    description    String?
+    members        GroupMember[]
+    capsules       Capsule[]
+    group_size_cap Int
 }
 
 model Community {
-    id          String   @id @default(cuid())
+    id          String            @id @default(cuid())
     name        String
     description String?
     members     CommunityMember[]
@@ -122,31 +123,36 @@ model Community {
 }
 
 model Capsule {
-    id               String                 @id @default(cuid())
-    creatorId        String // wallet address of the capsule creator
-    creator          User                   @relation(fields: [creatorId], references: [id])
-    nftId            String // on-chain NFT identifier
-    mediaType        MediaType
-    caption          String
-    tags             String[] // list of tags for search and filtering
-    isPublic         Boolean // true if accessible globally; false if private
-    finalUnlockDate  DateTime // after which anyone can open the capsule. these are just to show on frontend
-    earlyUnlockDates EarlyUnlockCondition[] // list of early unlock conditions. these are just to show on frontend
-    locationRegion   String? // extracted region from the location URL (just for showing on the frontend)
-    openThreshold    Int? // If this many unique early open attempts occur, auto-open the capsule
-    openAttempts     Int // current number of open attempts
-    memoryGuardian   String? // Wallet address for the designated guardian for transfers
+    id                   String                 @id @default(cuid())
+    creatorId            String // wallet address of the capsule creator
+    creator              User                   @relation(fields: [creatorId], references: [id])
+    nftId                String // on-chain NFT identifier
+    
+    mediaType            MediaType
+    caption              String
+    tags                 String[] // list of tags for search and filtering
+    
+    finalUnlockDate      DateTime // after which anyone can open the capsule. these are just to show on frontend
+    earlyUnlockDates     EarlyUnlockCondition[] // list of early unlock conditions. these are just to show on frontend
+    locationRegion       String? // extracted region from the location URL (just for showing on the frontend)
+    openThreshold        Int? // If this many unique early open attempts occur, auto-open the capsule
+    openAttempts         Int // current number of open attempts
+
+    memoryGuardianId     String?
+    memoryGuardian       User?                  @relation("memoryGuardian", fields: [memoryGuardianId], references: [id])
+    transferable         Boolean
 
     transactionStatus Boolean
     transactionHash   String?
     eventCreationNum  Int?
 
-    sharedGroups           Group[]
-    sharedCommunities      Community[]
-    sharedUsers            User[] @relation("SharedCapsules")
+    isPublic             Boolean // true if accessible globally; false if private
+    sharedGroups      Group[]
+    sharedCommunities Community[]
+    sharedUsers       User[]      @relation("SharedCapsules")
 
-    createdAt        DateTime               @default(now())
-    updatedAt        DateTime               @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 enum MediaType {

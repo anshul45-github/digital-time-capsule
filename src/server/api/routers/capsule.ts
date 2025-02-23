@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  Aptos,
-  AptosConfig,
-  Network,
-} from "@aptos-labs/ts-sdk";
+import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { MediaType } from "@prisma/client";
 
@@ -19,7 +15,12 @@ export const capsuleRouter = createTRPCRouter({
       z.object({
         creatorId: z.string(),
         nftId: z.string(),
-        mediaType: z.enum([MediaType.IMAGE, MediaType.TEXT, MediaType.VIDEO, MediaType.AUDIO]),
+        mediaType: z.enum([
+          MediaType.IMAGE,
+          MediaType.TEXT,
+          MediaType.VIDEO,
+          MediaType.AUDIO,
+        ]),
         caption: z.string(),
         tags: z.array(z.string()),
         finalUnlockDate: z.date(),
@@ -32,38 +33,40 @@ export const capsuleRouter = createTRPCRouter({
         locationRegion: z.string().optional(),
         isPublic: z.boolean(),
         openThreshold: z.number().optional(),
-        memoryGuardian: z.string().optional(),
+        memoryGuardianWallet: z.string().optional(),
+        memoryGuardianId: z.string().optional(),
         transactionHash: z.string(),
         eventCreationNum: z.number(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-        return await ctx.db.capsule.create({
-          data: {
-            creator: { connect: { id: input.creatorId } },
-            caption: input.caption,
-            tags: input.tags,
-            isPublic: input.isPublic,
-            nftId: input.nftId,
-            finalUnlockDate: input.finalUnlockDate,
-            mediaType: input.mediaType,
-            openAttempts: 0, // or any default value
-            earlyUnlockDates: {
-              createMany: {
-                data: input.earlyUnlockDates.map((date) => ({
-                  unlockDate: date.unlockDate,
-                  requiredPayment: date.requiredPayment,
-                })),
-              },
+      return await ctx.db.capsule.create({
+        data: {
+          creator: { connect: { id: input.creatorId } },
+          caption: input.caption,
+          tags: input.tags,
+          isPublic: input.isPublic,
+          nftId: input.nftId,
+          finalUnlockDate: input.finalUnlockDate,
+          mediaType: input.mediaType,
+          openAttempts: 0, // or any default value
+          earlyUnlockDates: {
+            createMany: {
+              data: input.earlyUnlockDates.map((date) => ({
+                unlockDate: date.unlockDate,
+                requiredPayment: date.requiredPayment,
+              })),
             },
-            locationRegion: input.locationRegion,
-            openThreshold: input.openThreshold,
-            memoryGuardian: input.memoryGuardian,
-            transactionHash: input.transactionHash,
-            transactionStatus: false,
-            eventCreationNum: input.eventCreationNum,
           },
-        });
+          locationRegion: input.locationRegion,
+          openThreshold: input.openThreshold,
+          memoryGuardian: { connect: { id: input.memoryGuardianId } },
+          transferable: !!input.memoryGuardianId,
+          transactionHash: input.transactionHash,
+          transactionStatus: false,
+          eventCreationNum: input.eventCreationNum,
+        },
+      });
     }),
 
   viewCapsule: publicProcedure
@@ -99,4 +102,6 @@ export const capsuleRouter = createTRPCRouter({
 
       return null;
     }),
+
+    
 });
