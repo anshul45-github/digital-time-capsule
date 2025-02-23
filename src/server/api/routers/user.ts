@@ -18,5 +18,22 @@ export const userRouter = createTRPCRouter({
         where: { email: session.user.email },
       });
     }),
+  
+    fetchUserCapsules: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      return await ctx.db.user.findMany({
+        where: {
+          id: input.userId,
+        },
+        select: {
+          capsules: true, 
+        }
+      });
+    }),
 
 })
