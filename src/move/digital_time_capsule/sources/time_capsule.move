@@ -209,17 +209,13 @@ module dtc::time_capsule {
     }
 
     #[test(creator = @0x1, guardian = @0x2)]
-    fun test_create_capsule_and_view() acquires TimeCapsuleEvents {
-        // Initialize events resource.
-        init_events(&signer::borrow(@0x1));
+    fun test_create_capsule_and_view() {
 
         // Create a capsule.
         let media_ptr = string::utf8(b"https://ipfs.io/ipfs/test-cid");
         let caption = string::utf8(b"Test Capsule");
-        create_capsule(&signer::borrow(@0x1), media_ptr, caption, true);
+        create_capsule(&signer::borrow_address(@0x1), media_ptr, caption, true);
 
-        // Retrieve the created event from TimeCapsuleEvents.
-        let events_ref = borrow_global<TimeCapsuleEvents>(signer::address_of(&signer::borrow(@0x1)));
         // For simplicity, assume the capsule we just created is the first event.
         let event = *vector::borrow(&events_ref.created_events, 0);
         let token_id = event.token_data_id;
@@ -253,8 +249,6 @@ module dtc::time_capsule {
 
     #[test(creator = @0x1, guardian = @0x2)]
     fun test_transfer_to_memory_guardian() {
-        // Initialize events resource.
-        init_events(&signer::borrow(@0x1));
 
         // Create a capsule.
         let media_ptr = string::utf8(b"https://ipfs.io/ipfs/test-cid");
