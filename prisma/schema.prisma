@@ -133,7 +133,7 @@ model Capsule {
     title                String
     caption              String
     tags                 String[] // list of tags for search and filtering
-    isPublic             boolean
+    isPublic             Boolean
     
     finalUnlockDate      DateTime // after which anyone can open the capsule. these are just to show on frontend
     earlyUnlockDates     EarlyUnlockCondition[] // list of early unlock conditions. these are just to show on frontend
