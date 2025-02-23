@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Medal, Clock, Settings, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { api } from '~/trpc/react';
 
 interface ProfileFormData {
   displayName: string | null;
@@ -18,8 +17,19 @@ export default function Profile() {
 
   const [name, setName] = useState('');
 
-  // const {data: user, error} = api.user.getCurrentUser.useQuery();
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get('/api/profile');
+        console.log('Profile:', response.data);
+        setName(response.data.user.name);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
 
+    fetchProfile();
+  }, [])
 
   const userStats = {
     capsules: 24,
@@ -50,20 +60,27 @@ export default function Profile() {
       await axios.patch('/api/profile', data);
       console.log('Profile updated:', data);
       
-      toast.success('Profile updated successfully!');
-      router.refresh();
+      toast.success('Profile updated successfully! Refresh to see changes!');
     } catch (error) {
       toast.error('Failed to update profile. Please try again.');
     } finally {
       setIsUpdating(false);
+      router.refresh();
     }
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if(!isMounted) return null;
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div>
         {/* Profile Header */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 mb-8">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl mb-8">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center">
               <User className="w-12 h-12 text-purple-600" />

@@ -7,11 +7,13 @@ import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
 import { Network } from "@aptos-labs/ts-sdk";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import Navbar from "./_components/navbar";
 import { Toaster } from "~/components/ui/sonner";
 import { LoginModal } from "./_components/login-modal";
 import { auth } from "~/auth";
 import { SessionProvider } from "next-auth/react";
+import { PetraWallet } from "petra-plugin-wallet-adapter";
+import { Sidebar } from "./_components/sidebar";
+import { Navbar } from "./_components/navbar";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -19,27 +21,42 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
+  const wallets = [new PetraWallet()];
+
   return (
-    <AptosWalletAdapterProvider
-      optInWallets={['Petra']}
-      autoConnect={true}
-      dappConfig={{ network: Network.DEVNET }}
-    >
+    // <AptosWalletAdapterProvider
+    //   optInWallets={['Petra']}
+    //   plugins={wallets}
+    //   autoConnect={true}
+    //   dappConfig={{ network: Network.DEVNET }}
+    // >
       <html lang="en" className={`${GeistSans.variable}`}>
         <SessionProvider session={session}>
         <body>
           <TRPCReactProvider><LoginModal />
-          <Navbar />
-          {children}
+          <div className="min-h-screen">
+            <div className="flex h-full w-full">
+              <div className="fixed left-0 top-0 hidden lg:block lg:w-[264px] h-full overflow-y-auto">
+                <Sidebar />
+              </div>
+              <div className="lg:pl-[264px]">
+                <Navbar />
+                <div className="mx-auto max-w-screen-2xl h-full">
+                  <main className="h-full py-8 px-6 flex flex-col">
+                    {children}
+                  </main>
+                </div>
+              </div>
+            </div>
+          </div>
           <Toaster /></TRPCReactProvider>
         </body>
         </SessionProvider>
       </html>
-    </AptosWalletAdapterProvider>
+    // </AptosWalletAdapterProvider>
   );
 }
