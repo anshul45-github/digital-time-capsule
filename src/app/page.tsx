@@ -1,19 +1,24 @@
 "use client";
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
 import { CreateCapsuleModal } from './_components/create-capsule-modal';
 import { FeaturedCapsules } from './_components/featured-capsules';
 import { Categories } from './_components/categories';
-import { useEffect } from 'react';
-import axios from 'axios';
-import { CreateCapsuleForm } from './_components/create-capsule-form';
+import { useCreateCapsuleModal } from '~/hooks/use-create-capsule-modal';
+import { Button } from '~/components/ui/button';
 
 export default function Home() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const { open } = useCreateCapsuleModal();
+
   return (
+
     <div className="container mx-auto px-4 py-8">
       TODO : Change capsule schema - Title = String,  CoverImgUrl = String
+      <Button onClick={open}>
+        New Capsule
+        </Button>
+      <CreateCapsuleModal />
       {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-neutral-700 mb-4">
@@ -42,7 +47,6 @@ export default function Home() {
       <Categories />
 
       {/* Create Modal */}
-      {showCreateModal && <CreateCapsuleModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }

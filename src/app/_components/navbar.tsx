@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import useRegisterModal from "~/hooks/use-register-modal";
 import Button from "./button";
 import { MobileSidebar } from "./mobile-sidebar";
+import { UserButton } from "./user-button";
 
 export const Navbar = () => {
   const { data: session } = useSession();
@@ -40,19 +41,20 @@ export const Navbar = () => {
           </span>
         </button>
       )}
-      {session && (
         <div className="flex items-center gap-1">
-          <Link
-            href="/profile"
-            className={`rounded-lg px-4 py-2 transition-colors ${isActive("/profile")}`}
-          >
-            <span className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Profile
-            </span>
-          </Link>
-
-          {!Wallet.connected && (
+          {session && (
+            // <Link
+            //   href="/profile"
+            //   className={`px-4 py-2 rounded-lg transition-colors ${isActive('/profile')}`}
+            // >
+            //   <span className="flex items-center gap-2">
+            //     <User className="w-4 h-4" />
+            //     Profile
+            //   </span>
+            // </Link>
+            <UserButton />)
+            
+            {!Wallet.connected &&
             <Button
               onClick={() => Wallet.connect("Petra")}
               className={`rounded-lg bg-red-400 px-4 py-2 transition-colors duration-300 ease-in-out hover:bg-red-600 ${isActive("/profile")}`}
