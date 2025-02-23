@@ -4,11 +4,9 @@ import { z } from "zod";
 import {
   Aptos,
   AptosConfig,
-  MoveOption,
-  type MoveVector,
   Network,
 } from "@aptos-labs/ts-sdk";
-import type { Account, U8, U64 } from "@aptos-labs/ts-sdk";
+import type { Account} from "@aptos-labs/ts-sdk";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import type {
   EntryFunctionArgumentTypes,
@@ -29,48 +27,21 @@ export const nftRouter = createTRPCRouter({
       z.object({
         walletAccount: z.custom<Account>(),
         mediaPointer: z.string(), // Expect a string (CID) that you'll convert to bytes.
-        mediaType: z.enum(["Image", "Text", "Video", "Audio"]),
         caption: z.string(),
-        tags: z.array(z.string()),
-        finalUnlockDate: z.date(),
-        earlyUnlockConditions: z.array(
-          z.object({
-            unlockDate: z.date(),
-            requiredPayment: z.number(),
-          }),
-        ),
-        locationRegion: z.string(),
-        isPublic: z.boolean(),
-        openThreshold: z.number().optional(),
-        memoryGuardian: z.string().optional(), // Address as string
+        newCollection: z.boolean(),
+        userId: z.string(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Convert strings to bytes as needed (using a helper, e.g., converting to Uint8Array).
-      function toBytes(s: string): number[] {
-        return Array.from(new TextEncoder().encode(s));
-      }
-
       // Build arguments for the entry function call.
       const args: (
         | EntryFunctionArgumentTypes
         | SimpleEntryFunctionArgumentTypes
       )[] = [
         input.walletAccount.accountAddress,
+        input.mediaPointer,
         input.caption,
-        Math.floor(input.finalUnlockDate.getTime() / 1000),
-        input.earlyUnlockConditions.map((condition) =>
-          Math.floor(condition.unlockDate.getTime() / 1000),
-        ),
-        input.earlyUnlockConditions.map(
-          (condition) => condition.requiredPayment,
-        ),
-        toBytes(input.locationRegion),
-        input.isPublic,
-        input.openThreshold ?? new MoveOption<U64>(),
-        input.memoryGuardian
-          ? toBytes(input.memoryGuardian)
-          : new MoveOption<MoveVector<U8>>(),
+        input.newCollection,
       ];
 
       const txn = aptos.transaction.build.simple({
@@ -102,6 +73,18 @@ export const nftRouter = createTRPCRouter({
         transactionHash: committedTransaction.hash,
       });
 
+      if (input.newCollection){
+        await ctx.db.user.update({
+        where: {
+          id: input.userId,
+        },
+        data: {
+          collectionOnChain: true,
+        }
+      })
+    }
+
+
       const event_handle = `${CONTRACT_ADDRESS}::time_capsule::CapsuleCreatedEvent`;
       const field_name = "created_events";
 
@@ -131,7 +114,8 @@ export const nftRouter = createTRPCRouter({
     .input(
       z.object({
         capsuleId: z.string(),
-        guardianWallet: z.custom<Account>(),
+        guardianWalletAddress: z.string(),
+        creatorWallet: z.custom<Account>(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -144,25 +128,25 @@ export const nftRouter = createTRPCRouter({
 
       //important to note that money cuts from the invite acceptee's account
       const txn = aptos.transaction.build.simple({
-        sender: input.guardianWallet.accountAddress,
+        sender: input.creatorWallet.accountAddress,
         data: {
           function: `${CONTRACT_ADDRESS}::time_capsule::transfer_to_memory_guardian`,
           functionArguments: [
             capsule?.nftId,
-            input.guardianWallet.accountAddress,
+            input.guardianWalletAddress,
           ],
         },
       });
 
       const [userTransactionResponse] = await aptos.transaction.simulate.simple(
         {
-          signerPublicKey: input.guardianWallet.publicKey,
+          signerPublicKey: input.creatorWallet.publicKey,
           transaction: await txn,
         },
       );
 
       const senderAuthenticator = aptos.transaction.sign({
-        signer: input.guardianWallet,
+        signer: input.creatorWallet,
         transaction: await txn,
       });
 

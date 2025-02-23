@@ -65,8 +65,9 @@ model User {
     accounts Account[]
     sessions Session[]
 
-    capsules        Capsule[]
-    guardianInvites Capsule[] @relation("memoryGuardian")
+    capsules          Capsule[]
+    guardianInvites   Capsule[] @relation("memoryGuardian")
+    collectionOnChain Boolean   @default(false)
 
     groups         GroupMember[]
     communities    CommunityMember[]
@@ -123,30 +124,31 @@ model Community {
 }
 
 model Capsule {
-    id                   String                 @id @default(cuid())
-    creatorId            String // wallet address of the capsule creator
-    creator              User                   @relation(fields: [creatorId], references: [id])
-    nftId                String // on-chain NFT identifier
-    
-    mediaType            MediaType
-    caption              String
-    tags                 String[] // list of tags for search and filtering
-    
-    finalUnlockDate      DateTime // after which anyone can open the capsule. these are just to show on frontend
-    earlyUnlockDates     EarlyUnlockCondition[] // list of early unlock conditions. these are just to show on frontend
-    locationRegion       String? // extracted region from the location URL (just for showing on the frontend)
-    openThreshold        Int? // If this many unique early open attempts occur, auto-open the capsule
-    openAttempts         Int // current number of open attempts
+    id        String @id @default(cuid())
+    creatorId String // wallet address of the capsule creator
+    creator   User   @relation(fields: [creatorId], references: [id])
+    nftId     String // on-chain NFT identifier
 
-    memoryGuardianId     String?
-    memoryGuardian       User?                  @relation("memoryGuardian", fields: [memoryGuardianId], references: [id])
-    transferable         Boolean
+    mediaType MediaType
+    caption   String
+    tags      String[] // list of tags for search and filtering
+
+    finalUnlockDate  DateTime // after which anyone can open the capsule. these are just to show on frontend
+    earlyUnlockDates EarlyUnlockCondition[] // list of early unlock conditions. these are just to show on frontend
+    locationRegion   String? // extracted region from the location URL (just for showing on the frontend)
+    openThreshold    Int? // If this many unique early open attempts occur, auto-open the capsule
+    openAttempts     Int // current number of open attempts
+
+    memoryGuardianId String?
+    memoryGuardian   User?   @relation("memoryGuardian", fields: [memoryGuardianId], references: [id])
+    memoryGuardianWallet String? // wallet address of the memory guardian
+    transferable     Boolean
 
     transactionStatus Boolean
     transactionHash   String?
     eventCreationNum  Int?
 
-    isPublic             Boolean // true if accessible globally; false if private
+    isPublic          Boolean // true if accessible globally; false if private
     sharedGroups      Group[]
     sharedCommunities Community[]
     sharedUsers       User[]      @relation("SharedCapsules")

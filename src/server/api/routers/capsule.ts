@@ -61,6 +61,7 @@ export const capsuleRouter = createTRPCRouter({
           locationRegion: input.locationRegion,
           openThreshold: input.openThreshold,
           memoryGuardian: { connect: { id: input.memoryGuardianId } },
+          memoryGuardianWallet: input.memoryGuardianWallet,
           transferable: !!input.memoryGuardianId,
           transactionHash: input.transactionHash,
           transactionStatus: false,
