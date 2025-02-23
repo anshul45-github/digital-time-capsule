@@ -7,6 +7,7 @@ authors = []
 dtc = "_"
 
 [dev-addresses]
+dtc = "2f5982eac395e062f5a9ca0878cfb4f6264a78a16b6a0a2d0f141fd93eb4d922"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
