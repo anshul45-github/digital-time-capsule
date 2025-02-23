@@ -3,80 +3,34 @@ module dtc::time_capsule {
     use aptos_token_objects::aptos_token::AptosToken;
     use aptos_framework::object::{Self, Object};
     use aptos_token_objects::collection;
-    use aptos_std::bcs;
+    use std::bcs;
     use aptos_std::from_bcs;
     use aptos_token_objects::property_map;
     use std::vector;
     use std::string;
     use std::option;
     use std::signer;
-    use std::error;
     use std::string::String; // Import String explicitly
+    use aptos_framework::event;
 
-
-    const ETOKEN_DOES_NOT_EXIST: u64 = 1;
-
-    /// Structure for an early unlock condition.
-    struct EarlyUnlockCondition has copy, drop, store {
-        unlock_date: u64,       // Unix timestamp for the early unlock date.
-        required_payment: u64,  // Payment required in fungible tokens (e.g. FACoin) for early unlock.
-    }
 
     /// Structure containing the on-chain metadata for a time capsule NFT.
     struct CapsuleMetadata has copy, drop, store {
-        media_pointer: vector<u8>,         // A hash/CID pointer (e.g. from IPFS) for the media.
-        final_unlock_date: u64,              // The Unix timestamp after which anyone can open the capsule.
-        early_unlock_conditions: vector<EarlyUnlockCondition>, // Early unlock conditions.
-        location_region: option::Option<vector<u8>>,         // The region (e.g., extracted from a Google Maps link) in bytes.
-        open_threshold: option::Option<u64>,                 // The number of unique open attempts required to auto-open.
-        memory_guardian: option::Option<vector<u8>>,         // The designated guardians address as bytes.
+        media_pointer: string::String,         // A hash/CID pointer (e.g. from IPFS) for the media.
     }
 
-    /// Event that is emitted when a capsule is created.
-    struct CapsuleCreatedEvent has copy, drop, store {
+    #[event]
+    struct CapsuleEvent has copy, drop, store {
         token_data_id: address,
     }
 
-    /// Resource that holds capsule creation events.
-    struct TimeCapsuleEvents has key {
-        created_events: vector<CapsuleCreatedEvent>,
-    }
 
-    /// Initialize the events resource under the creator's account.
-    public entry fun init_events(account: &signer) {
-        let events = TimeCapsuleEvents {
-            created_events: vector::empty<CapsuleCreatedEvent>(),
-        };
-        move_to(account, events);
-    }
-
-    public fun get_capsule_metadata(token: Object<AptosToken>): CapsuleMetadata acquires property_map::PropertyMap {
-        // Read and decode each property by key.
+    public fun get_capsule_metadata(token: Object<AptosToken>): CapsuleMetadata {
         let (_, media_ptr_bytes) = property_map::read(&token, &string::utf8(b"media_pointer"));
-        let media_pointer = from_bcs::from_bytes<vector<u8>>(media_ptr_bytes);
-
-        let (_, final_unlock_date_bytes) = property_map::read(&token, &string::utf8(b"final_unlock_date"));
-        let final_unlock_date = from_bcs::from_bytes<u64>(final_unlock_date_bytes);
-
-        let (_, early_unlock_conditions_bytes) = property_map::read(&token, &string::utf8(b"early_unlock_conditions"));
-        let early_unlock_conditions = from_bcs::from_bytes<vector<EarlyUnlockCondition>>(early_unlock_conditions_bytes);
-
-        let (_, location_region_bytes) = property_map::read(&token, &string::utf8(b"location_region"));
-        let location_region = from_bcs::from_bytes<option::Option<vector<u8>>>(location_region_bytes);
-
-        let (_, open_threshold_bytes) = property_map::read(&token, &string::utf8(b"open_threshold"));
-        let open_threshold = from_bcs::from_bytes<option::Option<u64>>(open_threshold_bytes);
-
-        let (_, memory_guardian_bytes) = property_map::read(&token, &string::utf8(b"memory_guardian"));
-        let memory_guardian = from_bcs::from_bytes<option::Option<vector<u8>>>(memory_guardian_bytes);
+        let media_pointer = from_bcs::to_string(media_ptr_bytes); // We want the link as a string
 
         CapsuleMetadata {
             media_pointer,
-            final_unlock_date,
-            early_unlock_conditions,
-            location_region,
-            open_threshold,
-            memory_guardian
         }
     }
 
@@ -84,49 +38,18 @@ module dtc::time_capsule {
         object::address_to_object<AptosToken>(token)
     }
 
-    public fun collection_exists(addr: address): bool {
-        exists<collection::Collection>(addr)
-    }
-
     /// Creates a new time capsule NFT.
     /// This function takes in a minimal set of parameters and serializes a CapsuleMetadata structure.
     /// Creates a new time capsule NFT.
     public entry fun create_capsule(
         creator: &signer,
-        media_pointer: vector<u8>,               // For example, an IPFS CID (as bytes)
+        media_pointer: string::String,               // For example, an IPFS CID (as bytes)
         caption: string::String,
-        final_unlock_date: u64,                    // Unix timestamp
-        early_unlock_unlock_dates: vector<u64>,    // Each early unlock date
-        early_unlock_payments: vector<u64>,         // Corresponding required payments
-        location_region: option::Option<vector<u8>>,               // e.g., "North America" as bytes
-        open_threshold: option::Option<u64>,        // Number of unique open attempts required to auto-open
-        memory_guardian: option::Option<vector<u8>>,               // The designated guardians address as bytes
+        make_new_collection: bool,
     ) {
-        // Ensure that the early unlock arrays have the same length.
-        let len_dates = vector::length(&early_unlock_unlock_dates);
-        let len_payments = vector::length(&early_unlock_payments);
-        assert!(len_dates == len_payments, 1);
-
-        // Build vector of EarlyUnlockCondition from the two arrays.
-        let conditions = vector::empty<EarlyUnlockCondition>();
-        let i = 0;
-        while (i < len_dates) {
-            let condition = EarlyUnlockCondition {
-                unlock_date: *vector::borrow(&early_unlock_unlock_dates, i),
-                required_payment: *vector::borrow(&early_unlock_payments, i)
-            };
-            vector::push_back(&mut conditions, condition);
-            i = i + 1;
-        };
-
 
         let capsule_metadata = CapsuleMetadata {
             media_pointer,
-            final_unlock_date,
-            early_unlock_conditions: conditions,
-            location_region,
-            open_threshold,
-            memory_guardian,
         };
 
         let keys = vector::empty<String>();
@@ -134,29 +57,8 @@ module dtc::time_capsule {
         let values = vector::empty<vector<u8>>();
 
         vector::push_back(&mut keys, string::utf8(b"media_pointer"));
-        vector::push_back(&mut types, string::utf8(b"vector<u8>"));
+        vector::push_back(&mut types, string::utf8(b"string::String"));
         vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.media_pointer));
-
-        vector::push_back(&mut keys, string::utf8(b"final_unlock_date"));
-        vector::push_back(&mut types, string::utf8(b"u64"));
-        vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.final_unlock_date));
-
-        vector::push_back(&mut keys, string::utf8(b"early_unlock_conditions"));
-        vector::push_back(&mut types, string::utf8(b"vector<EarlyUnlockCondition>"));
-        vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.early_unlock_conditions));
-
-        vector::push_back(&mut keys, string::utf8(b"location_region"));
-        vector::push_back(&mut types, string::utf8(b"option<vector<u8>>"));
-        vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.location_region));
-
-        vector::push_back(&mut keys, string::utf8(b"open_threshold"));
-        vector::push_back(&mut types, string::utf8(b"option<u64>"));
-        vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.open_threshold));
-
-        vector::push_back(&mut keys, string::utf8(b"memory_guardian"));
-        vector::push_back(&mut types, string::utf8(b"option<vector<u8>>"));
-        vector::push_back(&mut values, bcs::to_bytes(&capsule_metadata.memory_guardian));
-
 
 
         // Define basic token parameters.
@@ -165,8 +67,8 @@ module dtc::time_capsule {
         let token_uri = string::utf8(b"some uri");  // Replace with your actual base URI
 
         
-        let collection_addr = collection::create_collection_address(&signer::address_of(creator), &collection_name);
-        if (!collection_exists(collection_addr)) {
+        let _collection_addr = collection::create_collection_address(&signer::address_of(creator), &collection_name);
+        if (make_new_collection) {
             // Collection does not exist; create it.
             let description = string::utf8(b"Time Capsules Collection");
             let max_supply = 1000;
@@ -209,10 +111,10 @@ module dtc::time_capsule {
         );
 
         let token_id = object::object_address(&token_obj);
-
-        // Now, emit an event with the NFT's ID. For this to work, ensure the events resource has been initialized.
-        let events_ref = borrow_global_mut<TimeCapsuleEvents>(signer::address_of(creator));
-        vector::push_back(&mut events_ref.created_events, CapsuleCreatedEvent { token_data_id: token_id });
+        let caps = CapsuleEvent {
+            token_data_id: token_id
+        };
+        event::emit<CapsuleEvent>(caps);
 
     }
 
@@ -223,99 +125,154 @@ module dtc::time_capsule {
         return aptos_framework::timestamp::now_seconds()
     }
 
+    
     /// Returns media pointer if opener satisfies unlock conditions; otherwise returns none.
-    public entry fun get_capsule_media_if_valid_opener(
+    #[view]
+    public fun get_capsule_media_if_valid_opener(
         capsule_id: address, //Stored obj as id in json format in db
+        final_unlock_date: u64,
         open_attempts: u64,
-        user_location: vector<u8>,
+        open_threshold: option::Option<u64>,
+        location_region: option::Option<string::String>, // The location region of the user
+        user_location: string::String, // The location of the user
         current_date: u64,
-        early_unlock_plan: option::Option<u64>, // The earliestUnlockable of the earliest unlock condition to be sent here. Go over all the plans bought and find the one that has lowest date 
-): option::Option<vector<u8>> {
-    // Look up the capsule by its id (assumes the NFT is stored keyed by capsule_id)
-    let capsule = borrowFromAddress(capsule_id);
-    let capsule_metadata = get_capsule_metadata(capsule);
+        early_unlock_dates: vector<u64>, // The dates of the early unlock conditions
+        early_unlock_plan: option::Option<u64>, // The earliestUnlockable date of the earliest unlock condition to be sent here. Go over all the plans bought and find the one that has lowest date 
+    ): string::String {
+        // Look up the capsule by its id (assumes the NFT is stored keyed by capsule_id)
+        let capsule = borrowFromAddress(capsule_id);
+        let capsule_metadata = get_capsule_metadata(capsule);
 
-    // If the capsule is already unlocked or the final unlock date has passed, return the media pointer.
-    if (current_date >= capsule_metadata.final_unlock_date) {
-        return option::some(capsule_metadata.media_pointer);
-    };
-
-    // Check if location is required and if it matches the user's location area, then only allow opening else return null
-    // If a location is required, check that the user's location matches.
-    if (option::is_some(&capsule_metadata.location_region)) {
-        let required_location = *option::borrow(&capsule_metadata.location_region);
-        if (required_location != user_location) {
-            return option::none<vector<u8>>();
-        }
-    };
-
-
-    // If an open threshold is defined and the provided open_attempts meet or exceed it, return the media pointer.
-    if (option::is_some(&capsule_metadata.open_threshold)) {
-        let threshold = *option::borrow(&capsule_metadata.open_threshold);
-        if (open_attempts >= threshold) {
-            return option::some(capsule_metadata.media_pointer);
+        // If the capsule is already unlocked or the final unlock date has passed, return the media pointer.
+        if (current_date >= final_unlock_date) {
+            return capsule_metadata.media_pointer;
         };
-    };
 
-    // Check if user has made the payment for any one of the early unlock conditions and check if the date is less than the unlock date
-    // The payment has been done
-    // Send the media pointer accordingly
+        // Check if location is required and if it matches the user's location area, then only allow opening else return null
+        // If a location is required, check that the user's location matches.
+        if (option::is_some(&location_region)) {
+            let region = *option::borrow(&location_region);
+            if (region != user_location) {
+                return string::utf8(b"");
+            }
+        };
 
-    let len = vector::length(&capsule_metadata.early_unlock_conditions);
-    if (option::is_some(&early_unlock_plan)) {
-        let plan_val = *option::borrow(&early_unlock_plan);
-        let i = 0;
-        while (i < len) {
-            let condition = *vector::borrow(&capsule_metadata.early_unlock_conditions, i);
-            // If the current date is before the condition's unlock date...
-            if (plan_val <= condition.unlock_date) {
-                if (plan_val <= current_date){
-                    return option::some(capsule_metadata.media_pointer);
-                }
+
+        // If an open threshold is defined and the provided open_attempts meet or exceed it, return the media pointer.
+        if (option::is_some(&open_threshold)) {
+            let threshold = *option::borrow(&open_threshold);
+            if (open_attempts >= threshold) {
+                return capsule_metadata.media_pointer;
             };
-            i = i + 1;
         };
-    };
+
+        // Check if user has made the payment for any one of the early unlock conditions and check if the date is less than the unlock date
+        // The payment has been done
+        // Send the media pointer accordingly
+
+        let len = vector::length(&early_unlock_dates);
+        if (len > 0) {
+            let plan_val = *option::borrow(&early_unlock_plan);
+            let i = 0;
+            while (i < len) {
+                let unlock_date = *vector::borrow(&early_unlock_dates, i);
+                // If the current date is before the condition's unlock date...
+                if (plan_val <= unlock_date) {
+                    if (plan_val <= current_date){
+                        return capsule_metadata.media_pointer;
+                    }
+                };
+                i = i + 1;
+            };
+        };
 
 
-    // If none of the conditions are met, return none.
-    option::none<vector<u8>>()
-}
+        // If none of the conditions are met, return none.
+        string::utf8(b"")
+    }
 
 
     // transfer capsule to memory guardian (essentially delete the capsule for current user and let the new user make the capsule)
     // We invoke this after the memory guardian has accepted the invite to see this. Other wise we will just drop it
-        public entry fun transfer_to_memory_guardian(
+    public entry fun transfer_to_memory_guardian(
         capsule_id: address,
-        guardian: &signer,
+        creator: &signer,
+        guardian: address,
     ) {
         //NOTE: We are supposed to open this only and only when we have made sure that transferable field on the db is true. That field should be made false as this contract evaluates
         let capsule = borrowFromAddress(capsule_id);
-        let capsule_metadata = get_capsule_metadata(capsule);
-        // Move (delete) the capsule resource from storage.
-        let capsuleRef = move_from<AptosToken>(capsule_id);
-        
-        // Ensure that a memory guardian was assigned.
-        if (!option::is_some(&capsule_metadata.memory_guardian)) {
-            // No guardian was set; abort with an error code.
-            abort(100);
-        };
 
-        // Retrieve the stored memory guardian (as a vector<u8>).
-        let stored_guardian = *option::borrow(&capsule_metadata.memory_guardian);
-
-        // Convert the caller's address to a vector<u8> via BCS.
-        let caller_bytes = bcs::to_bytes(&signer::address_of(guardian));
-
-        // Check that the caller is indeed the designated memory guardian.
-        if (stored_guardian != caller_bytes) {
-            // Unauthorized: the caller's address does not match the stored guardian.
-            abort(101);
-        };
-
-        move_to(guardian, capsuleRef);
+        assert!(object::owner(capsule) == signer::address_of(creator), 1);
+        object::transfer(creator, capsule, guardian);
+        assert!(object::owner(capsule) == guardian, 1);
 
     }
 
+    #[test(creator = @0x1, guardian = @0x2)]
+    fun test_create_capsule_and_view() acquires TimeCapsuleEvents {
+        // Initialize events resource.
+        init_events(&signer::borrow(@0x1));
+
+        // Create a capsule.
+        let media_ptr = string::utf8(b"https://ipfs.io/ipfs/test-cid");
+        let caption = string::utf8(b"Test Capsule");
+        create_capsule(&signer::borrow(@0x1), media_ptr, caption, true);
+
+        // Retrieve the created event from TimeCapsuleEvents.
+        let events_ref = borrow_global<TimeCapsuleEvents>(signer::address_of(&signer::borrow(@0x1)));
+        // For simplicity, assume the capsule we just created is the first event.
+        let event = *vector::borrow(&events_ref.created_events, 0);
+        let token_id = event.token_data_id;
+
+        // Set test parameters for unlocking.
+        let final_unlock_date = 1000;
+        let open_attempts = 0;
+        let open_threshold = option::none<u64>();
+        let location_region = option::none<String>();
+        let user_location = string::utf8(b""); // no location required
+        let current_date = 2000;
+        let early_unlock_dates = vector::empty<u64>();
+        let early_unlock_plan = option::none<u64>();
+
+        // Call the view function.
+        let result = get_capsule_media_if_valid_opener(
+            token_id,
+            final_unlock_date,
+            open_attempts,
+            open_threshold,
+            location_region,
+            user_location,
+            current_date,
+            early_unlock_dates,
+            early_unlock_plan
+        );
+
+        // Assert that the media pointer returned matches what we set.
+        assert!(result == string::utf8(b"https://ipfs.io/ipfs/test-cid"), 1);
+    }
+
+    #[test(creator = @0x1, guardian = @0x2)]
+    fun test_transfer_to_memory_guardian() {
+        // Initialize events resource.
+        init_events(&signer::borrow(@0x1));
+
+        // Create a capsule.
+        let media_ptr = string::utf8(b"https://ipfs.io/ipfs/test-cid");
+        let caption = string::utf8(b"Test Capsule");
+        create_capsule(&signer::borrow(@0x1), media_ptr, caption, true);
+
+        // Retrieve the token id from events.
+        let events_ref = borrow_global<TimeCapsuleEvents>(signer::address_of(&signer::borrow(@0x1)));
+        let event = *vector::borrow(&events_ref.created_events, 0);
+        let token_id = event.token_data_id;
+
+        // Transfer the token from creator (@0x1) to guardian (@0x2).
+        transfer_to_memory_guardian(token_id, &signer::borrow(@0x1), signer::address_of(&signer::borrow(@0x2)));
+
+        // Verify transfer: the token's owner should now be @0x2.
+        let token_obj = borrowFromAddress(token_id);
+        assert!(object::owner(token_obj) == signer::address_of(&signer::borrow(@0x2)), 2);
+    }
 }
+
+

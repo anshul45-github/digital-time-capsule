@@ -15,6 +15,7 @@ export const capsuleRouter = createTRPCRouter({
       z.object({
         creatorId: z.string(),
         nftId: z.string(),
+        title: z.string(),
         mediaType: z.enum([
           MediaType.IMAGE,
           MediaType.TEXT,
@@ -42,6 +43,7 @@ export const capsuleRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       return await ctx.db.capsule.create({
         data: {
+          title: input.title,
           creator: { connect: { id: input.creatorId } },
           caption: input.caption,
           tags: input.tags,
@@ -61,47 +63,78 @@ export const capsuleRouter = createTRPCRouter({
           locationRegion: input.locationRegion,
           openThreshold: input.openThreshold,
           memoryGuardian: { connect: { id: input.memoryGuardianId } },
+          memoryGuardianWallet: input.memoryGuardianWallet,
           transferable: !!input.memoryGuardianId,
           transactionHash: input.transactionHash,
           transactionStatus: false,
           eventCreationNum: input.eventCreationNum,
         },
+        include: {
+          creator: true,
+          earlyUnlockDates: true,
+          memoryGuardian: true,
+        },
       });
     }),
 
   viewCapsule: publicProcedure
-    .input(z.object({ id: z.string(), locationRegion: z.string() }))
+    .input(
+      z.object({
+        capsuleId: z.string(),
+        userId: z.string(),
+        userLocation: z.string(),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const capsule = await ctx.db.capsule.findUnique({
-        where: { id: input.id },
+        where: { id: input.capsuleId },
+        include: {
+          creator: true,
+          earlyUnlockDates: true,
+        },
       });
       if (!capsule) throw new Error("Capsule not found");
 
-      function toBytes(s: string): number[] {
-        return Array.from(new TextEncoder().encode(s));
-      }
+      const user = (await ctx.db.user.findUnique({
+        where: { id: input.userId },
+        include: {
+          earlyUnlocks: true,
+        },
+      })) as { earlyUnlocks: { unlockDate: Date }[] } | null;
+      if (!user) throw new Error("User not found");
+      user.earlyUnlocks.sort(
+        (a, b) => a.unlockDate.getTime() - b.unlockDate.getTime(),
+      );
 
       const payload = {
         function:
           `${CONTRACT_ADDRESS}::time_capsule::get_capsule_media_if_valid_opener` as `${string}::${string}::${string}`,
         functionArguments: [
-          parseInt(capsule.nftId),
+          capsule.nftId,
+          Math.round(capsule.finalUnlockDate.getTime() / 1000),
           capsule.openAttempts,
-          toBytes(input.locationRegion),
+          capsule.openThreshold ?? undefined,
+          capsule.locationRegion ?? undefined,
+          input.userLocation,
           Math.round(new Date().getTime() / 1000),
+          capsule.earlyUnlockDates.map((date) =>
+            Math.round(date.unlockDate.getTime() / 1000),
+          ),
+          user.earlyUnlocks.length > 0
+            ? Math.round(user.earlyUnlocks[0]!.unlockDate.getTime() / 1000)
+            : undefined,
         ],
-        typeArguments: ["vector<u8>", "u64", "vector<u8>", "u64"],
       };
       const mediaPointer = await aptos.view({ payload });
       // Use mediaPointer or handle it appropriately
-      if (mediaPointer && mediaPointer.length > 0) {
-        const byteArray = Uint8Array.from(mediaPointer as number[]);
-        const url = new TextDecoder("utf-8").decode(byteArray);
-        return url;
+      if (
+        mediaPointer &&
+        typeof mediaPointer === "object" &&
+        "value" in mediaPointer
+      ) {
+        return mediaPointer.value as string;
       }
+      return "";
 
-      return null;
     }),
-
-    
 });
