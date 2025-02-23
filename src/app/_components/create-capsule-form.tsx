@@ -1,8 +1,6 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { A } from "node_modules/@aptos-labs/ts-sdk/dist/esm/publicKey-BMtGNNLg.mjs";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { DottedSeparator } from "./dotted-separator";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "~/components/ui/form";
@@ -15,10 +13,17 @@ interface CreateCapsuleFormProps {
 }
 
 export const CreateCapsuleFormSchema = z.object({
-    title: z.string(),
+    title: z.string().min(1, "Required"),
     caption: z.string(),
-    mediaUrl: z.string(),
+    mediaUrl: z.union([
+        z.instanceof(File),
+        z.string().transform((val) => val === "" ? undefined : val)
+    ]),
     mediaType: z.string(),
+    coverImgUrl: z.union([
+        z.instanceof(File),
+        z.string().transform((val) => val === "" ? undefined : val)
+    ]),
     tags: z.string(),
     isPublic: z.boolean(),
     finalUnlockTime: z.coerce.date()
@@ -31,6 +36,7 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
             caption: "",
             mediaUrl: "",
             mediaType: "",
+            coverImgUrl: "",
             tags: "",
             isPublic: false,
             finalUnlockTime: new Date()
