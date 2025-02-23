@@ -12,10 +12,10 @@ export default function Home() {
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-neutral-700 mb-4">
           Preserve Your Memories in Time
         </h1>
-        <p className="text-xl text-white/80 mb-8">
+        <p className="text-xl text-neutral-700/80 mb-8">
           Create digital time capsules, share moments, and unlock them together.
         </p>
         <button
