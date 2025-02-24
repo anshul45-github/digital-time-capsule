@@ -13,7 +13,8 @@ import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { useState } from "react";
 import { X } from "lucide-react";
-import axios from "axios";
+import { api } from "~/trpc/react";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
 
 interface CreateCapsuleFormProps {
     onClose?: () => void;
@@ -60,6 +61,10 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
 
     const [tags, setTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState("");
+    const Wallet = useWallet()
+
+    const makeCapNFT = api.aptos.nft.createCapsule.useMutation();
+    const createCap = api.capsule.createCapsule.useMutation();
 
     const handleAddTag = () => {
         if (tagInput.trim() !== "") {
@@ -76,6 +81,10 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
 
     const onSubmit = async (values: z.infer<typeof CreateCapsuleFormSchema>) => {
         try {
+            if (!Wallet.connected) {
+                return toast.error("Please connect your wallet to create a capsule");
+            }
+
             let mediaUrl = values.mediaUrl;
 
             if (values.mediaType !== "TEXT" && values.mediaUrl instanceof File) {
@@ -95,7 +104,15 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
                 mediaUrl = response.data.url;
             }
 
-            const res = await post("/api/capsules", { ...values, mediaUrl, tags, caption: values.caption || "" });
+            // const res = await post("/api/capsules", { ...values, mediaUrl, tags, caption: values.caption || "" });
+            const NFTRes = makeCapNFT.mutate({
+                walletAccount: Wallet.wallet?.accounts[0],
+                mediaPointer: mediaUrl,
+                caption: values.caption,
+                newCollection: true,
+                userId: Wallet.account.accountAddress,
+            })
+            
             toast.success("Capsule created successfully");
             console.log(res);
         } catch (error) {
@@ -293,8 +310,3 @@ export const CreateCapsuleForm = ({ onClose }: CreateCapsuleFormProps) => {
         </Card>
     );
 };
-
-async function post(url: string, data: { title: string; caption: string; mediaType: string; tags: string[]; isPublic: boolean; finalUnlockTime: Date; mediaUrl?: string | File | undefined; coverImgUrl?: string | File | undefined; }) {
-    // Implement the post function to send data to your API
-    return await axios.post(url, data);
-}

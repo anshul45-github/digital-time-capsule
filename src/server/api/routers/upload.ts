@@ -1,24 +1,34 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import cloudinary from "~/server/utils/cloudinary";
+// import type { NextApiRequest, NextApiResponse } from "next";
+// import cloudinary from "~/server/utils/cloudinary";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+//   if (req.method !== "POST") {
+//     return res.status(405).json({ error: "Method not allowed" });
+//   }
 
-  try {
-    const { file } = req.body;
+//   try {
+//     const { file } = req.body;
 
-    if (!file) {
-      return res.status(400).json({ error: "No file provided" });
-    }
+//     if (!file) {
+//       return res.status(400).json({ error: "No file provided" });
+//     }
 
-    const uploadResponse = await cloudinary.uploader.upload(file, {
-      upload_preset: "your_preset",
-    });
+//     const uploadResponse = await cloudinary.uploader.upload(file, {
+//       upload_preset: "your_preset",
+//     });
 
-    return res.status(200).json({ url: uploadResponse.secure_url });
-  } catch (error) {
-    return res.status(500).json({ error: "Upload failed", details: error });
-  }
-}
+//     return res.status(200).json({ url: uploadResponse.secure_url });
+//   } catch (error) {
+//     return res.status(500).json({ error: "Upload failed", details: error });
+//   }
+// }
+
+import { z } from "zod";
+import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { MediaType } from "@prisma/client";
+
+
+export const uploadRouter = createTRPCRouter({
+  
+})

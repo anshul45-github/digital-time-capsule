@@ -1,12 +1,9 @@
 import { postRouter } from "~/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { capsuleRouter } from "./routers/capsule";
-import { indexRouter } from "./routers";
 import { userRouter } from "./routers/user";
 import { nftRouter } from "./routers/aptos/nft";
-import { ftRouter } from "./routers/aptos/ft";
-import { multiSigRouter } from "./routers/aptos/multisig";
-import { moveRouter } from "./routers/aptos/move";
+import { uploadRouter } from "./routers/upload";
 
 /**
  * This is the primary router for your server.
@@ -15,14 +12,11 @@ import { moveRouter } from "./routers/aptos/move";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
-  index: indexRouter,
   user: userRouter,
   capsule: capsuleRouter,
+  upload: uploadRouter,
   aptos: createTRPCRouter({
     nft: nftRouter,
-    ft: ftRouter,
-    multisig: multiSigRouter,
-    move: moveRouter,
   }),
 });
 
