@@ -6,7 +6,7 @@ import {
   AptosConfig,
   Network,
 } from "@aptos-labs/ts-sdk";
-import type { Account} from "@aptos-labs/ts-sdk";
+import type { Account } from "@aptos-labs/ts-sdk";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import type {
   EntryFunctionArgumentTypes,
